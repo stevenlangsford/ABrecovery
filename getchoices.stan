@@ -35,8 +35,8 @@ model{
   //model:
   //setup ppnts
   for(appnt in 1:hm_ppnts){ //to replace with priors?
-    calcsd[appnt]=0.2;
-    tolerance[appnt]=0.1;
+    calcsd[appnt]=0.01;
+    tolerance[appnt]=0.05;
   }
   //populate estimated attribute values (with a calculation observation)
   for(atrial in 1:hm_trials){
@@ -65,7 +65,7 @@ model{
   }//trial
 
   
-  //get estimated values & make a choice: in generated block, this is choice generation version.
+  //in recovery version, observe a choice. This is choice generation version, choice generation happens in generated quantities block.
   /* for(atrial in 1:hm_trials){ */
   /*   for(anoption in 1:hm_options){ */
   /*     estval[atrial,anoption]=est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]; */

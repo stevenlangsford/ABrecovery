@@ -1,30 +1,31 @@
 library(tidyverse)
 library(rstan)
 library(patchwork)
+library(MCMCpack)#supplies rdirichlet
 rm(list=ls())
 set.seed(4)
 
-##set up tiny data
-hm_stim=2
-hm_ppnts=2
+##set up
+hm_stim=25
+hm_ppnts=15
 hm_options=3
 hm_attributes=2;
 
-sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts)#,# demo1: even weight on all attributes
+#sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts)#,# demo1: even weight on all attributes
+sim.k <- rdirichlet(hm_ppnts,rep(1,hm_attributes)) #demo2, random weights to recover
 
 simexp.df <- data.frame(ppntid=rep(1:hm_ppnts,each=hm_stim),
-                        trialid=1:hm_stim,
-                        choice=base::sample(1:hm_options,hm_stim*hm_ppnts,replace=TRUE)
+                        trialid=1:hm_stim
                         )
 
 for(i in 1:hm_attributes){
     for(j in 1:hm_options){
-        simexp.df[,paste0("option",j,"attribute",i)] <- rnorm(nrow(simexp.df))
+        simexp.df[,paste0("option",j,"attribute",i)] <- rnorm(hm_stim)
     }
 }
 
 ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
-dim(ttoa) <- c(nrow(simexp.df),3,2)#convert to matrix
+dim(ttoa) <- c(nrow(simexp.df),hm_options,hm_attributes)#convert to matrix
 for(atrial in 1:nrow(simexp.df)){ #populate with values
     for(i in 1:hm_attributes){
         for(j in 1:hm_options){
@@ -50,6 +51,11 @@ datalist = list(hm_trials=nrow(simexp.df),
 sim.fit <- stan(file="getchoices.stan",
            data=datalist,
            iter=1000,
+           init=function(){
+               zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
+               dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
+               list(est_trial_option_attribute=zeros)
+           },
            chains=4,
            control = list(max_treedepth = 15));
 
@@ -59,7 +65,8 @@ simexp.samples <- as.data.frame(extract(sim.fit, permuted = TRUE)) # extract ret
 
 #add generated choices
 for(i in 1:nrow(simexp.df)){
-    simexp.df[i,"choice"] <- sample_n(simexp.samples,1)%>%select(paste0("generated_choice.",i))%>%as.numeric
+    simexp.df[i,"choice"] <-
+        sample_n(simexp.samples,1)%>%dplyr::select(paste0("generated_choice.",i))%>%as.numeric
 }
 
 ##recovery from simulation!
@@ -79,10 +86,16 @@ recovery.fit <- stan(file="agentRecovery.stan",
            data=datalist,
            iter=1000,
            chains=4,
+           init=function(){
+               zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
+               dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
+               list(est_trial_option_attribute=zeros)
+           },
            control = list(max_treedepth = 15));
 
 save(recovery.fit,file="recovery_fit.RData");
 
 recovery.samples <- as.data.frame(extract(recovery.fit, permuted = TRUE)) # extract returns a list of arrays
 
+save.image(file="sim_runeverything_completefit.RData")
 View("done")

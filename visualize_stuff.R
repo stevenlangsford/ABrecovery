@@ -1,4 +1,5 @@
 ## ##diag zone
+load("sim_runeverything_completefit.RData")
 
 trialeval.plot <- function(whichtrial,mysamples){
 valuehist <- ggplot(mysamples)
@@ -20,4 +21,12 @@ return(
 
 gen.vs.recover.eval.plot <- function(atrial,simsamples,recoversamples){
 trialeval.plot(atrial,simsamples)/trialeval.plot(atrial,recoversamples)#+plot_layout(ncol=2)
+}
+
+k.recovery.plot <- function(){
+    ##assuming loaded a runeverything image, so sim.k and recoverysample are visible.
+    recoveryK <- recovery.samples%>%dplyr::select(contains("k."))%>%dplyr::select(ends_with(".1"))%>%apply(2,mean)
+    
+    compare.df <- data.frame(sim.k=sim.k[,1],recovered.k=recoveryK)
+    ggplot(compare.df,aes(x=sim.k,y=recovered.k))+geom_point()+theme_bw()
 }
