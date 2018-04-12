@@ -35,7 +35,7 @@ model{
   //model:
   //setup ppnts
   for(appnt in 1:hm_ppnts){ //to replace with priors?
-    calcsd[appnt]=0.01;
+    calcsd[appnt]=0.8;
     tolerance[appnt]=0.05;
   }
   //populate estimated attribute values (with a calculation observation)
