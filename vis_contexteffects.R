@@ -3,7 +3,7 @@ library(patchwork)
 rm(list=ls())
 
 saveplots=TRUE; #admin
-load(file="contexttest1_fit.RData")
+load(file="noisesurvey/calc2ord0.25fit.RData")
 
                                         #hacky multiplicity of methods for setting consistent colors.... ouch
 fixedcolors <- c("red","blue","green")#works with scale_fill_maunual

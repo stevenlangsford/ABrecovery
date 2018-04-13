@@ -10,7 +10,8 @@ data{
 
   //supply this for fixed-sim-generation:
   vector[hm_attributes] k[hm_ppnts];
-  
+  real calcsd_level;
+  real ordsd_level;
   //  int choice[hm_trials]; //ppnt responses!
 }
 
@@ -27,6 +28,7 @@ parameters{
 model{
   //todo: move these to params and infer them.
   real calcsd[hm_ppnts];
+  real ordsd[hm_ppnts];
   real tolerance[hm_ppnts]; //?reasonable bounds?
 
   //actual local variables:
@@ -36,7 +38,8 @@ model{
   //model:
   //setup ppnts
   for(appnt in 1:hm_ppnts){ //to replace with priors?
-    calcsd[appnt]=0.4;
+    calcsd[appnt]=calcsd_level;
+    ordsd[appnt]=ordsd_level;//I would really rather merge these two sd params into one, but this version is interesting to dissociate impact of each obs type.
     tolerance[appnt]=0.1;
   }
   //populate estimated attribute values from their priors:
@@ -62,11 +65,11 @@ model{
       for(option2 in 1:(option1-1)){
 	for(anattribute in 1:hm_attributes){
 	  //prob status '<': phi(-tolerance)
-	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*calcsd[ppntid[atrial]]);
+	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]);
 	  //prob of status '=':phi(tolerance)-phi(-tolerance)
-	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*calcsd[ppntid[atrial]])-ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1];
+	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]])-ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1];
 	  //prob of status '>': 1-phi(tolerance)
-	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*calcsd[ppntid[atrial]]);
+	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]);
 
 	  target += categorical_lpmf(fabs(truth_trial_option_attribute[atrial,option1,anattribute]-truth_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : truth_trial_option_attribute[atrial,option1,anattribute]<truth_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3 | ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute]);//Before the pipe: nested ternary if, evaluates to true relation between options 1 & 2 on target attribute {1:'<',2:'=',3:'>'}: after pipe: the probability of each outcome given the current attribute estimates, a vector length 3 over the possible status values {<,=,>}
 	}//attribute

@@ -1,0 +1,20 @@
+ssh slangsfo@mac-rickl05.psych.lsa.umich.edu
+
+putting files with scp
+scp -r targfiles slangsfo@mac-rickl05.psych.lsa.umich.edu:TARGPATH
+
+getting files with scp
+scp -r slangsfo@mac-rickl05.psych.lsa.umich.edu:TARGPATH LOCALPATH
+
+#eg
+scp -r slangsfo@mac-rickl05.psych.lsa.umich.edu:workspace/ gotit
+
+To use local emacs but on remote files (via Tramp, closes connection when emacs closes or via M-x tramp-cleanup-connection)
+C-x C-f /ssh:slangsfo@mac-rickl05.psych.lsa.umich.edu:PATH
+
+to allow a process to keep running even though you're logged off:
+screen
+[your command]
+ctrl-a ctrl-d #detach
+#later: log back in
+screen -r [resume]

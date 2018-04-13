@@ -43,6 +43,10 @@ for(atrial in 1:nrow(simexp.df)){ #populate with values
     }
 }
 
+for(calcsd_level in seq(from=.01,to=1,length=8)){
+
+    ordsd_level=.25
+    
 datalist = list(hm_trials=nrow(simexp.df),
                 hm_ppnts=hm_ppnts,
                 ppntid=simexp.df$ppntid,
@@ -52,7 +56,9 @@ datalist = list(hm_trials=nrow(simexp.df),
 
                 truth_trial_option_attribute = ttoa,
 
-                k=sim.k
+                k=sim.k,
+                calcsd_level=calcsd_level,
+                ordsd_level=ordsd_level
                 )
 
 sim.fit <- stan(file="getchoices.stan",
@@ -68,51 +74,130 @@ sim.fit <- stan(file="getchoices.stan",
 
 #save(sim.fit,file="context_withdecoys_fit.RData"); #use save image to get everything at once instead
 
-withdecoy.samples <- as.data.frame(extract(sim.fit, permuted = TRUE)) # extract returns a list of arrays
+withdecoy.samples <- as.data.frame(extract(sim.fit, permuted = TRUE))# extract returns a list of arrays
 
 
 ##Go around again but with 2 options.
 ##first, trim the data passed. Probably not be necessary, can't hurt, might expose an error?
 
-hm_options=2 #new setting
-ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
-dim(ttoa) <- c(nrow(simexp.df),hm_options,hm_attributes)#convert to matrix
-for(atrial in 1:nrow(simexp.df)){ #populate with values
-    for(i in 1:hm_attributes){
-        for(j in 1:hm_options){
-            ttoa[atrial,j,i] <- simexp.df[atrial,paste0("option",j,"attribute",i)]
-        }
-    }
+## hm_options=2 #new setting
+## ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
+## dim(ttoa) <- c(nrow(simexp.df),hm_options,hm_attributes)#convert to matrix
+## for(atrial in 1:nrow(simexp.df)){ #populate with values
+##     for(i in 1:hm_attributes){
+##         for(j in 1:hm_options){
+##             ttoa[atrial,j,i] <- simexp.df[atrial,paste0("option",j,"attribute",i)]
+##         }
+##     }
+## }
+
+## datalist = list(hm_trials=nrow(simexp.df),
+##                 hm_ppnts=hm_ppnts,
+##                 ppntid=simexp.df$ppntid,
+
+##                 hm_options=hm_options,
+##                 hm_attributes=hm_attributes,
+
+##                 truth_trial_option_attribute = ttoa,
+##                 k=sim.k
+##                 )
+
+## twooption.fit <- stan(file="getchoices.stan",
+##            data=datalist,
+##            iter=1000,
+##            chains=4,
+##            init=function(){
+##                zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
+##                dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
+##                list(est_trial_option_attribute=zeros)
+##            },
+##            control = list(max_treedepth = 15));
+
+## #save(twooption.fit,file="context_twooption_fit.RData")
+
+## twooption.samples <- as.data.frame(extract(twooption.fit, permuted = TRUE)) # extract returns a list of arrays
+
+
+save.image(file=paste0("noisesurvey/calc",calcsd_level,"ord",ordsd_level,"fit.RData"))
 }
 
+
+for(ordsd_level in seq(from=.01,to=1,length=8)){
+
+    calcsd_level=.25
+    
 datalist = list(hm_trials=nrow(simexp.df),
                 hm_ppnts=hm_ppnts,
                 ppntid=simexp.df$ppntid,
 
-                hm_options=hm_options,
+                hm_options=3, #run with decoys
                 hm_attributes=hm_attributes,
 
                 truth_trial_option_attribute = ttoa,
-                k=sim.k
+
+                k=sim.k,
+                calcsd_level=calcsd_level,
+                ordsd_level=ordsd_level
                 )
 
-twooption.fit <- stan(file="getchoices.stan",
+sim.fit <- stan(file="getchoices.stan",
            data=datalist,
            iter=1000,
-           chains=4,
            init=function(){
                zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
                dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
                list(est_trial_option_attribute=zeros)
            },
+           chains=4,
            control = list(max_treedepth = 15));
 
-#save(twooption.fit,file="context_twooption_fit.RData")
+#save(sim.fit,file="context_withdecoys_fit.RData"); #use save image to get everything at once instead
 
-twooption.samples <- as.data.frame(extract(twooption.fit, permuted = TRUE)) # extract returns a list of arrays
+withdecoy.samples <- as.data.frame(extract(sim.fit, permuted = TRUE))# extract returns a list of arrays
 
 
+##Go around again but with 2 options.
+##first, trim the data passed. Probably not be necessary, can't hurt, might expose an error?
 
-save.image(file="contexttest1_fit.RData")
-source("vis_contexteffects.R")
+## hm_options=2 #new setting
+## ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
+## dim(ttoa) <- c(nrow(simexp.df),hm_options,hm_attributes)#convert to matrix
+## for(atrial in 1:nrow(simexp.df)){ #populate with values
+##     for(i in 1:hm_attributes){
+##         for(j in 1:hm_options){
+##             ttoa[atrial,j,i] <- simexp.df[atrial,paste0("option",j,"attribute",i)]
+##         }
+##     }
+## }
+
+## datalist = list(hm_trials=nrow(simexp.df),
+##                 hm_ppnts=hm_ppnts,
+##                 ppntid=simexp.df$ppntid,
+
+##                 hm_options=hm_options,
+##                 hm_attributes=hm_attributes,
+
+##                 truth_trial_option_attribute = ttoa,
+##                 k=sim.k
+##                 )
+
+## twooption.fit <- stan(file="getchoices.stan",
+##            data=datalist,
+##            iter=1000,
+##            chains=4,
+##            init=function(){
+##                zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
+##                dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
+##                list(est_trial_option_attribute=zeros)
+##            },
+##            control = list(max_treedepth = 15));
+
+## #save(twooption.fit,file="context_twooption_fit.RData")
+
+## twooption.samples <- as.data.frame(extract(twooption.fit, permuted = TRUE)) # extract returns a list of arrays
+
+
+save.image(file=paste0("noisesurvey/calc",calcsd_level,"ord",ordsd_level,"fit.RData"))
+}
+#source("vis_contexteffects.R")
 View("done")
