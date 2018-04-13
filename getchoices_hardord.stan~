@@ -6,7 +6,7 @@ data{
   int hm_options;
   int hm_attributes;
 
-  matrix[hm_options,hm_attributes] truth_trial_option_attribute[hm_trials];
+  matrix[hm_options,hm_attributes]  truth_trial_option_attribute[hm_trials];
 
   //supply this for fixed-sim-generation:
   vector[hm_attributes] k[hm_ppnts];
@@ -20,8 +20,6 @@ parameters{
 
   //attribute estimates
   matrix[hm_options,hm_attributes]  est_trial_option_attribute[hm_trials];
-
-  vector[hm_options] calcobs[hm_trials];
 }//end parameters
 
 model{
@@ -36,27 +34,18 @@ model{
   //model:
   //setup ppnts
   for(appnt in 1:hm_ppnts){ //to replace with priors?
-    calcsd[appnt]=0.4;
-    tolerance[appnt]=0.1;
+    calcsd[appnt]=0.3;
+    tolerance[appnt]=0.05;
   }
-  //populate estimated attribute values from their priors:
+  //populate estimated attribute values (with a calculation observation)
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
       for(anattribute in 1:hm_attributes){
-	est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,1);
+	est_trial_option_attribute[atrial,anoption,anattribute]~normal(truth_trial_option_attribute[atrial,anoption,anattribute],calcsd[ppntid[atrial]]);
       }
     }
   }
-  //apply the calculation observation
-  for(atrial in 1:hm_trials){
-    for(anoption in 1:hm_options){
-      //this double ~  looks weird if you think of ~ as sampling, but makes sense if you think of it as incrementing target prob, which is what it's actually doing.
-      calcobs[atrial,anoption]~normal(truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]);//calcobs & truth consistency is good
-      calcobs[atrial,anoption]~normal(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]); //calcobs & attribute-estimate consistency is also good.
-    }
-  }
-  
-  //apply the ordinal observation:
+  //apply an ordinal observation:
   for(atrial in 1:hm_trials){
     for(option1 in 2:hm_options){//indexes for lower triangle only: comparisons are directionless & not with self
       for(option2 in 1:(option1-1)){
@@ -85,7 +74,7 @@ model{
   
 }//model block
 
-generated quantities{
+generated quantities{//diagnostics, can delete
   int generated_choice[hm_trials];
   vector[hm_options] estval_tracker[hm_trials];
   vector[hm_options] trueval_tracker[hm_trials];

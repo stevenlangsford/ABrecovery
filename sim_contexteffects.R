@@ -15,9 +15,12 @@ sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts)#,# demo1: even
 
 simexp.df <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
 1,0.25,0.75,0.75,0.25,.15,.75
-2,0.25,0.75,0.75,0.25,.25,.65
+2,0.25,0.75,0.75,0.25,.25,.60
 3,0.25,0.75,0.75,0.25,.15,.65
-4,0.25,0.75,0.75,0.25,.5,.5",header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line.
+4,0.25,0.75,0.75,0.25,0.5,0.5
+5,0.25,0.75,0.75,0.25,0.2,0.8
+6,0.25,0.75,0.75,0.25,0.3,0.7",
+header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line.
 
 accumulator <- data.frame()
 for(i in 1:hm_ppnts){
@@ -70,6 +73,7 @@ withdecoy.samples <- as.data.frame(extract(sim.fit, permuted = TRUE)) # extract 
 
 ##Go around again but with 2 options.
 ##first, trim the data passed. Probably not be necessary, can't hurt, might expose an error?
+
 hm_options=2 #new setting
 ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
 dim(ttoa) <- c(nrow(simexp.df),hm_options,hm_attributes)#convert to matrix
@@ -107,5 +111,8 @@ twooption.fit <- stan(file="getchoices.stan",
 
 twooption.samples <- as.data.frame(extract(twooption.fit, permuted = TRUE)) # extract returns a list of arrays
 
+
+
 save.image(file="contexttest1_fit.RData")
+source("vis_contexteffects.R")
 View("done")
