@@ -80,8 +80,6 @@ sim.fit <- stan(file=modelnames[surveypoint],
            chains=4,
            control = list(max_treedepth = 15));
 
-#save(sim.fit,file="context_withdecoys_fit.RData"); #use save image to get everything at once instead
-
 withdecoy.samples <- as.data.frame(extract(sim.fit, permuted = TRUE))# extract returns a list of arrays
 
 save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolerance",tolerance_level,"fit.RData"))

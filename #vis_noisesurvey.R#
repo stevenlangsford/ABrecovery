@@ -55,7 +55,7 @@ for(afile in list.files(targfolder,pattern=".RData")){
 
 noisesurvey.df$targvar <- noisesurvey.df[,mytargvar]
 
-all_trialtype_lines.plot <- ggplot(noisesurvey.df%>%group_by(trialtype,calcsd,ordsd)%>%summarize(optiondiff=mean(optiondiff))%>%ungroup(),aes(x=targvar,y=optiondiff,group=trialtype,color=trialtype))+
+all_trialtype_lines.plot <- ggplot(noisesurvey.df%>%group_by(trialtype,calcsd,ordsd,targvar)%>%summarize(optiondiff=mean(optiondiff))%>%ungroup(),aes(x=targvar,y=optiondiff,group=trialtype,color=trialtype))+
     geom_point()+
     geom_line()+
     theme_bw()+
@@ -64,11 +64,11 @@ all_trialtype_lines.plot <- ggplot(noisesurvey.df%>%group_by(trialtype,calcsd,or
 #for stimtype in 1:6
 
 sbs.plot <- function(stimtype){
-    (ggplot(noisesurvey.df%>%filter(trialid==stimtype)%>%group_by(calcsd,ordsd)%>%summarize_at(vars(starts_with("V")),mean)%>%ungroup())+
+    (ggplot(noisesurvey.df%>%filter(trialid==stimtype)%>%group_by(calcsd,ordsd,targvar)%>%summarize_at(vars(starts_with("V")),mean)%>%ungroup())+
     geom_point(aes(x=targvar,y=V1),color="red4")+
     geom_line(aes(x=targvar,y=V1),color="red4")+
     geom_point(aes(x=targvar,y=V2),color="blue4")+
-    geom_line(aes(x=ctargvar,y=V2),color="blue4")+
+    geom_line(aes(x=targvar,y=V2),color="blue4")+
     geom_point(aes(x=targvar,y=V3),color="green4")+
     geom_line(aes(x=targvar,y=V3),color="green4")+
     xlab(mytargvar)+

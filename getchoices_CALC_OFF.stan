@@ -53,14 +53,14 @@ model{
     }
   }
   //apply the calculation observation
-  for(atrial in 1:hm_trials){
-    for(anoption in 1:hm_options){
-      //this double ~  looks weird if you think of ~ as sampling, but makes sense if you think of it as incrementing target prob, which is what it's actually doing.
-      calcobs[atrial,anoption]~normal(truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]);//calcobs & truth consistency is good
-      calcobs[atrial,anoption]~normal(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]); //calcobs & attribute-estimate consistency is also good.
-      //together these leave the true attribute values 'communicating' with the estimates indirectly via the calculation observation.
-    }
-  }
+  /* for(atrial in 1:hm_trials){ */
+  /*   for(anoption in 1:hm_options){ */
+  /*     //this double ~  looks weird if you think of ~ as sampling, but makes sense if you think of it as incrementing target prob, which is what it's actually doing. */
+  /*     calcobs[atrial,anoption]~normal(truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]);//calcobs & truth consistency is good */
+  /*     calcobs[atrial,anoption]~normal(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]); //calcobs & attribute-estimate consistency is also good. */
+  /*     //together these leave the true attribute values 'communicating' with the estimates indirectly via the calculation observation. */
+  /*   } */
+  /* } */
   
   //apply the ordinal observation:
   for(atrial in 1:hm_trials){
