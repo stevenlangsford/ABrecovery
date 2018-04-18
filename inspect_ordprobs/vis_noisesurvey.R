@@ -20,7 +20,7 @@ stim.plot <- function(trialnumber){
         geom_point(aes(x=option1attribute1,y=option1attribute2),color=colorgetter(1),size=5)+
         geom_point(aes(x=option2attribute1,y=option2attribute2),color=colorgetter(2),size=5)+
         geom_point(aes(x=option3attribute1,y=option3attribute2),color=colorgetter(3),size=5)+
-        theme_bw()+xlim(c(0,1))+ylim(c(0,1))
+        theme_bw()#+xlim(c(0,1))+ylim(c(0,1))
 }
 
 
@@ -29,24 +29,25 @@ noisesurvey.df <- data.frame();
 for(afile in list.files(targfolder,pattern=".RData")){
 
     load(file=paste0(targfolder,afile))
-
+#    simexp.df$trialid=1:nrow(simexp.df) #:-|
     choicesummary.df <- t(rbind(
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==1)}),
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==2)}),
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==3)})
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==1)}),
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==2)}),
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==3)})
     ))%>%as.data.frame
 
     choicesummary.df$trialid <- simexp.df$trialid
-    choicesummary.df$optiondiff <- with(choicesummary.df, ifelse(trialid==4,V3-V1,V1-V2))
-    choicesummary.df$trialtype <- sapply(choicesummary.df$trialid,
-                                         function(x){
-                                             if(x==1)return("attractionLeft");
-                                             if(x==2)return("attractionDown");
-                                             if(x==3)return("attractionBoth");
-                                             if(x==4)return("compromise");
-                                             if(x==5)return("simOutside");
-                                             if(x==6)return("simInside");
-                                         });
+    choicesummary.df$optiondiff <- with(choicesummary.df,V1-V2)#with(choicesummary.df, ifelse(trialid==4,V3-V1,V1-V2))
+    choicesummary.df$trialtype <- as.factor(choicesummary.df$trialid) #no names.
+    ## choicesummary.df$trialtype <- sapply(choicesummary.df$trialid,
+    ##                                      function(x){
+    ##                                          if(x==1)return("attractionLeft");
+    ##                                          if(x==2)return("attractionDown");
+    ##                                          if(x==3)return("attractionBoth");
+    ##                                          if(x==4)return("compromise");
+    ##                                          if(x==5)return("simOutside");
+    ##                                          if(x==6)return("simInside");
+    ##                                      });
     choicesummary.df$calcsd <- datalist$calcsd_level
     choicesummary.df$ordsd <- datalist$ordsd_level
 
@@ -56,8 +57,8 @@ for(afile in list.files(targfolder,pattern=".RData")){
 noisesurvey.df$targvar <- noisesurvey.df[,mytargvar]
 
 all_trialtype_lines.plot <- ggplot(noisesurvey.df%>%group_by(trialtype,calcsd,ordsd,targvar)%>%summarize(optiondiff=mean(optiondiff))%>%ungroup(),aes(x=targvar,y=optiondiff,group=trialtype,color=trialtype))+
-    geom_point()+
-    geom_line()+
+#    geom_point()+
+    geom_line()+geom_text(aes(label=trialtype))+
     theme_bw()+
     xlab(mytargvar)
 
@@ -75,7 +76,8 @@ sbs.plot <- function(stimtype){
     theme_bw())
 }
 
-for(i in 1:6){
+#    browser()
+for(i in 1:length(unique(simexp.df$trialid))){
     ggsave( (sbs.plot(i)+stim.plot(i)), file=paste0(targfolder,"plots/stimtype",i,".png"),width=15)
 }
 
@@ -83,5 +85,7 @@ ggsave(all_trialtype_lines.plot,file=paste0(targfolder,"plots/noisesurvey_summar
 }
 
 #do the thing
-doplots("noisesurvey/vary_ord/","ordsd")
-doplots("noisesurvey/vary_calc/","calcsd")
+#doplots("noisesurvey/vary_ord/","ordsd")
+#doplots("noisesurvey/vary_calc/","calcsd")
+doplots("./","ordsd")
+#doplots("./","calcsd")

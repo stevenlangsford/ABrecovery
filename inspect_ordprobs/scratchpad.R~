@@ -1,0 +1,32 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+library(patchwork)
+rm(list=ls())
+
+#for(afile in list.files(pattern="^calc.*RData")){
+afile=list.files(pattern="^calc.*RData")[1]
+
+    load(afile)
+
+    fixedcolors <- c("red","blue","green")#works with scale_fill_maunual
+    colorgetter <- function(id){ #works with independent geoms
+        if(id==1) return("red")
+        if(id==2) return("blue")
+        if(id==3) return("green")
+        stop(paste("bad id in colorgetter ",id))
+    }
+
+    stim.plot <- function(trialnumber){
+        ggplot(simexp.df[trialnumber,])+
+            geom_line(data=data.frame(x=c(0,1),y=c(1,0)),aes(x=x,y=y),alpha=.9,color="grey",linetype="dotted",size=2)+
+            geom_point(aes(x=option1attribute1,y=option1attribute2),color=colorgetter(1),size=5)+
+            geom_point(aes(x=option2attribute1,y=option2attribute2),color=colorgetter(2),size=5)+
+            geom_point(aes(x=option3attribute1,y=option3attribute2),color=colorgetter(3),size=5)+
+            theme_bw()#+xlim(c(0,1))#+ylim(c(0,1))
+    }
+
+
+stim.plot(1)
+
+mysamples%>%select(contains("est_trial_option_attribute"))
