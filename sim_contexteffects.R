@@ -157,9 +157,9 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ## targfolder="ordonly_varytolerance"
 ## )
 
-simexp.df <- rbind(context_demo_stim,shifted_compromise_stim)
-simexp.df$trialid <- 1:nrow(simexp.df)
-sim.k <- even.sim.k
+## simexp.df <- rbind(context_demo_stim,shifted_compromise_stim)
+## simexp.df$trialid <- 1:nrow(simexp.df)
+## sim.k <- even.sim.k
 ## do_a_survey(
 ##     calcsd_levels=c(.15,.15,.15),
 ##     ordsd_levels=c(.15,.15,.15),
@@ -168,10 +168,13 @@ sim.k <- even.sim.k
 ##     targfolder="tolerance_survey"
 ##     )
 
+simexp.df <- rbind(context_demo_stim,shifted_compromise_stim)
+simexp.df$trialid <- 1:nrow(simexp.df)
+sim.k <- even.sim.k
 do_a_survey(
-    calcsd_levels=c(.15),
-    ordsd_levels=c(.15),
-    tolerance_levels=c(.2),
-    model_names=rep("getchoices.stan",1),
-    targfolder="inspect_ordprobs"
+    calcsd_levels=c(.05,.1,.25),
+    ordsd_levels=c(.15,.15,.15),
+    tolerance_levels=c(.1,.1,.1),
+    model_names=rep("getchoices.stan",3),
+    targfolder="inspect_calcsd"
     )
