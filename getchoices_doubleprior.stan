@@ -10,33 +10,32 @@ data{
 
   //choice generation and agent recovery differ here.
   //fixed when generating choices, otherwise inferred:
-  /* vector[hm_attributes] k[hm_ppnts]; */
-  /* real calcsd_level; //scalars at the moment (no individual differences), but could easily pass as vectors like for k. */
-  /* real ordsd_level; */
-  /* real tolerance_level; */
+  vector[hm_attributes] k[hm_ppnts];
+  real calcsd_level; //scalars at the moment (no individual differences), but could easily pass as vectors like for k.
+  real ordsd_level;
+  real tolerance_level;
   //absent when generating choices, otherwise included:
-   int choice[hm_trials]; //ppnt responses!
+  //  int choice[hm_trials]; //ppnt responses!
+}
+
+transformed data{
+  //for agent recovery, move all this stuff to model block and replace assignment with sampling statements.
+  real calcsd[hm_ppnts];
+  real ordsd[hm_ppnts];
+  real tolerance[hm_ppnts];
+
+    //setup ppnts
+  for(appnt in 1:hm_ppnts){
+    calcsd[appnt]=calcsd_level;//No individual differences ATM, but no barrier to adding them.
+    ordsd[appnt]=ordsd_level;//Could consider one shared variability parameter?
+    tolerance[appnt]=tolerance_level;
+  }
 }
 
 parameters{
   //*inferred ppnt parameters*
-  simplex[hm_attributes] k[hm_ppnts];//implicit prior is uniform over valid simplexes
-  real calcsd;
-  real ordsd;
-  real tolerance;
+  //  simplex[hm_attributes] k[hm_ppnts];//implicit prior is uniform over valid simplexes
 
-  //if ppnts are identical
-  calcsd ~ uniform(.5,2);//[hm_ppnts]; //no indi differences yet, keeping things simple.
-  ordsd ~ uniform(.5,2);//[hm_ppnts];
-  tolerance ~normal(0,.5);//[hm_ppnts];
-
-  //if ppnts are distinct:
-  /* for(appnt in 1:hm_ppnts){ */
-  /*   calcsd[appnt]=calcsd_level;
-  /*   ordsd[appnt]=ordsd_level;//Could consider one shared variability parameter? */
-  /*   tolerance[appnt]=tolerance_level; */
-  /* } */
-  
   //attribute estimates
   matrix[hm_options,hm_attributes]  est_trial_option_attribute[hm_trials];
   vector[hm_options] calcobs[hm_trials];
@@ -44,6 +43,7 @@ parameters{
 }//end parameters
 
 model{
+
   //local variables:
   vector[hm_options] estval[hm_trials];
   vector[3] ordprob_trial_option1_option2_attribute_status[hm_trials,hm_options,hm_options,hm_attributes]; //where 'status' means <,=,>, coded as 1,2,3
@@ -54,7 +54,8 @@ model{
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
       for(anattribute in 1:hm_attributes){
-	est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,1);
+	if(anattribute % 2 == 0) est_trial_option_attribute[atrial,anoption,anattribute]~normal(1,2); //Symmetry-breaker allows compromise effect?
+	else est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,1); //?
       }
     }
   }
@@ -86,48 +87,49 @@ model{
     }//option1
   }//trial
 
-  //observe a choice
-  for(atrial in 1:hm_trials){
-    for(anoption in 1:hm_options){
-      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7; //note hacky extremification (see choice generation)
-    }
-    choice[atrial]~categorical_logit(estval[atrial]);
-  }
+  
+  //in recovery version, observe a choice here .This is the choice generation version, choice generation happens in generated quantities block.
+  /* for(atrial in 1:hm_trials){ */
+  /*   for(anoption in 1:hm_options){ */
+  /*     estval[atrial,anoption]=est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]; */
+  /*   } */
+  /*   choice[atrial]~categorical_logit(estval[atrial]); */
+  /* } */
   
 }//model block
 
-//generated quantities{
-//  int generated_choice[hm_trials];//required: return value.
-//  vector[hm_options] estval_tracker[hm_trials];//required to generate choices
-//  vector[hm_options] estval_tracker_raw[hm_trials];//diag check
-//  vector[hm_options] trueval_tracker[hm_trials];//diag only
-//  vector[hm_options] ordprob_tracker[hm_trials,hm_options,hm_options,hm_attributes]; //diag only
+generated quantities{
+  int generated_choice[hm_trials];//required: return value.
+  vector[hm_options] estval_tracker[hm_trials];//required to generate choices
+  vector[hm_options] estval_tracker_raw[hm_trials];//diag check
+  vector[hm_options] trueval_tracker[hm_trials];//diag only
+  vector[hm_options] ordprob_tracker[hm_trials,hm_options,hm_options,hm_attributes]; //diag only
 
   //track the ordinal observation probs
-  /* for(atrial in 1:hm_trials){ */
-  /*   for(option1 in 1:hm_options){//fill whole array in tracker even though it's redundant/meaningless: otherwise you get an invalid stan object. */
-  /*     for(option2 in 1:hm_options){ */
-  /* 	for(anattribute in 1:hm_attributes){//should consider switching to phi_approx instead of normal_cdf for better numerical performance. */
-  /* 	  //	    -est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]] */
-  /* 	  //prob status '<': phi(-tolerance) */
-  /* 	  ordprob_tracker[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]); */
-  /* 	  //prob of status '=':phi(tolerance)-phi(-tolerance) */
-  /* 	  ordprob_tracker[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]])-ordprob_tracker[atrial,option1,option2,anattribute,1]; */
-  /* 	  //prob of status '>': 1-phi(tolerance) */
-  /* 	  ordprob_tracker[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]); */
-  /* 	}//attribute */
-  /*     }//option2 */
-  /*   }//option1 */
-  /* }//trial */
+  for(atrial in 1:hm_trials){
+    for(option1 in 1:hm_options){//fill whole array in tracker even though it's redundant/meaningless: otherwise you get an invalid stan object.
+      for(option2 in 1:hm_options){
+	for(anattribute in 1:hm_attributes){//should consider switching to phi_approx instead of normal_cdf for better numerical performance.
+	  //	    -est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]
+	  //prob status '<': phi(-tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]);
+	  //prob of status '=':phi(tolerance)-phi(-tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]])-ordprob_tracker[atrial,option1,option2,anattribute,1];
+	  //prob of status '>': 1-phi(tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]);
+	}//attribute
+      }//option2
+    }//option1
+  }//trial
 
   
 //track est and true value to agent, generate a choice from (extremified) est value  
-  /* for(atrial in 1:hm_trials){ */
-  /*   for(anoption in 1:hm_options){ */
-  /*     estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Mult-10 intended to avoid underflow. Is this even legit? what's the better way? */
-  /*     estval_tracker_raw[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]); //check the move towards hardmax is not insane. */
-  /*     trueval_tracker[atrial,anoption]=truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]; */
-  /*   } */
-  /*   generated_choice[atrial]=categorical_logit_rng(estval_tracker[atrial]); */
-  /* } */
-//}
+  for(atrial in 1:hm_trials){
+    for(anoption in 1:hm_options){
+      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Mult-10 intended to avoid underflow. Is this even legit? what's the better way?
+      estval_tracker_raw[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]); //check the move towards hardmax is not insane.
+      trueval_tracker[atrial,anoption]=truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]];
+    }
+    generated_choice[atrial]=categorical_logit_rng(estval_tracker[atrial]);
+  }
+}

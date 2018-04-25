@@ -12,7 +12,7 @@ hm_options=3 #can change to 2 if you want, extra options will just be ignored if
 hm_attributes=2; #Must match the stim df provided, it's up to you to stay consistent.
 
 #Options for sim.k:
-even.sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts)#,# demo1: even weight on all attributes: all ppnts are identical
+even.sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts,byrow=TRUE)#,# demo1: even weight on all attributes: all ppnts are identical (byrow necessary if you're filling with anything other than uniform values).
 random.sim.k <- rdirichlet(hm_ppnts,rep(1,hm_attributes)) #demo2, random weights, all ppnts are different. Doesn't make much sense with the context effect demo stim, which are set up fo .5,.5 weights.
 
 #Options for stimuli:                   
@@ -20,17 +20,26 @@ context_demo_stim <- read.table(text="trialid,option1attribute1,option1attribute
 1,0.25,0.75,0.75,0.25,.15,.75
 2,0.25,0.75,0.75,0.25,.25,.60
 3,0.25,0.75,0.75,0.25,.15,.65
-4,0.25,0.75,0.75,0.25,0.5,0.5
+4,0,1,1,0,0.5,0.5
 5,0.25,0.75,0.75,0.25,0.2,0.8
 6,0.25,0.75,0.75,0.25,0.3,0.7",
 header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line, similarity candidates close by on equivalue line.
 
-shifted_compromise_stim <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
-1,-1,1,-0.5,0.5,1,-1
-2,0.5,-0.5,0,0,-0.5,0.5
-3,0.5,-0.1,0.2,0.2,-0.5,0.9
-4,1,0,0,1,0.5,0.5",
-header=TRUE, sep=",")#checking for centered-ness re priors on compromise stim specifically.
+
+shifted_compromise_stim <- read.table(
+    text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
+1,-1,1,1,-1,0,0",
+header=TRUE,sep=",")#checking for centered-ness re priors on compromise stim specifically.
+## 2, #translate up
+shifted_compromise_stim <- rbind(shifted_compromise_stim,shifted_compromise_stim[1,]+c(1,0,1,0,1,0,1)) #trialnumber x1y1 x2y2 x3y3
+## 3, #translate right
+shifted_compromise_stim <- rbind(shifted_compromise_stim,shifted_compromise_stim[1,]+c(2,1,0,1,0,1,0))
+## 4, #translate diag small
+shifted_compromise_stim <- rbind(shifted_compromise_stim,shifted_compromise_stim[1,]+c(3,.5,.5,.5,.5,.5,.5))
+## 5, #translate diag large
+shifted_compromise_stim <- rbind(shifted_compromise_stim,shifted_compromise_stim[1,]+c(4,1.5,1.5,1.5,1.5,1.5,1.5))
+## 6, #translate diag wide
+shifted_compromise_stim <- rbind(shifted_compromise_stim,c(6,0,2,2,0,1,1))
 
 random_stim <- data.frame()
 for(atrial in 1:30){
@@ -54,11 +63,12 @@ if(!all(model_names%in%list.files()))stop("model not found")
 
 
 accumulator <- data.frame()
-for(i in 1:hm_ppnts){
-    simexp.df$ppntid = i;
-    accumulator <- rbind(accumulator,simexp.df)
-}
-simexp.df <- accumulator; rm(accumulator);
+    for(i in 1:hm_ppnts){
+        simexp.df$ppntid = i;
+        accumulator <- rbind(accumulator,simexp.df)
+    }
+    simexp.df <- accumulator; #local version for the rest of this function
+    simexp.df <<- accumulator; #boot upstairs to the global .env, expose to save.image
 
 #convert to stan-friendly format
 ttoa = rep(NA,nrow(simexp.df)*hm_options*hm_attributes)
@@ -94,7 +104,7 @@ datalist <<- list(hm_trials=nrow(simexp.df),
                 tolerance_level=tolerance_level
                 )
 
-sim.fit <<- stan(file=modelname,
+        sim.fit <<- stan(file=modelname,
            data=datalist,
            iter=1000,
            init=function(){
@@ -105,8 +115,10 @@ sim.fit <<- stan(file=modelname,
            chains=4,
            control = list(max_treedepth = 15));
 
-mysamples <<- as.data.frame(extract(sim.fit, permuted = TRUE))# extract returns a list of arrays
-
+        mysamples <<- as.data.frame(extract(sim.fit, permuted = TRUE))# extract returns a list of arrays
+        ##for convenience, attach a choice to simexp.df
+        simexp.df$choice <<- as.numeric(mysamples%>%dplyr::select(contains("choice"))%>%sample_n(1)%>%t)
+        
 save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolerance",tolerance_level,"model",modelname,"fit.RData"))
     }#for each surveypoint
 
@@ -168,13 +180,93 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     targfolder="tolerance_survey"
 ##     )
 
-simexp.df <- rbind(context_demo_stim,shifted_compromise_stim)
-simexp.df$trialid <- 1:nrow(simexp.df)
-sim.k <- even.sim.k
+## simexp.df <- rbind(context_demo_stim,shifted_compromise_stim)
+## simexp.df$trialid <- 1:nrow(simexp.df)
+## sim.k <- even.sim.k
+## do_a_survey(
+##     calcsd_levels=c(.05,.1,.25),
+##     ordsd_levels=c(.15,.15,.15),
+##     tolerance_levels=c(.1,.1,.1),
+##     model_names=rep("getchoices.stan",3),
+##     targfolder="inspect_calcsd"
+##     )
+
+## simexp.df <- rbind(shifted_compromise_stim)
+## simexp.df$trialid <- 1:nrow(simexp.df)
+## sim.k <- even.sim.k
+## do_a_survey(
+##     calcsd_levels=c(.2,.2,.2),
+##     ordsd_levels=c(.1,.1,.1),
+##     tolerance_levels=c(.1,.1,.1),
+##     model_names=c("getchoices.stan","getchoices_wideprior.stan","getchoices_narrowprior.stan"),
+##     targfolder="compromise_check"
+##     )
+
+
+#these are compromise stim for k of [.25,.75]
+## simexp.df <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
+## 1,-1,1.6666666,1,1,0,1.333333
+## 2,.5,1.16666666,1.5,.8333333333,1,1
+## 3,-.9,2.3,.3,1.9,.3,1.9
+## 4,-1,.33333333333,1,-.33333333333,0,0
+## 5,0,1.3333333,1.5,.83333333,.2,1.266666666
+## ",
+## header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line, similarity candidates close by on equivalue line.
+
+
+
+##these are the 'walk-in' compromise checks.
+## 1,0,1.3333333,1.5,.83333333,.2,1.266666666
+## 2,0,1.3333333,1.3,.9,.2,1.266666666
+## 3,0,1.3333333,1.1,.96666666,.2,1.266666666
+## 4,0,1.3333333,.9,1.03333333,.2,1.266666666
+## 5,0,1.3333333,.7,1.1,.2,1.266666666
+
+## simexp.df <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
+## 1,0,1.3333333,.6,1.133333333333,.2,1.266666666
+## 2,0,1.3333333,.4,1.2,.2,1.266666666
+## 3,0,1.3333333,.3,1.2333333333,.2,1.266666666
+## 4,0,1.3333333,.25,1.25,.2,1.266666666
+## ",
+## header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line, similarity candidates close by on equivalue line.
+
+## simexp.df$trialid <- 1:nrow(simexp.df)
+## sim.k <- matrix(c(.25,.75),ncol=hm_attributes,nrow=hm_ppnts,byrow=TRUE)
+
+## doacheck <- function(arow){
+##     print(arow$option1attribute1*sim.k[1,1]+arow$option1attribute2*sim.k[1,2])
+##     print(arow$option2attribute1*sim.k[1,1]+arow$option2attribute2*sim.k[1,2])
+##     print(arow$option3attribute1*sim.k[1,1]+arow$option3attribute2*sim.k[1,2])
+## }
+
+## doacheck(simexp.df[1,])
+## doacheck(simexp.df[2,])
+## doacheck(simexp.df[3,])
+## doacheck(simexp.df[4,])
+
+## do_a_survey(
+##     calcsd_levels=c(.1),
+##     ordsd_levels=c(.1),
+##     tolerance_levels=c(.1),
+##     model_names=c("getchoices_narrowprior.stan"),
+##     targfolder="compromise_check/skew_k/strongerords"
+##     )
+
+
+#simexp.df <- context_demo_stim #shifted_compromise_stim#
+#sim.k <- even.sim.k
+
+simexp.df <- random_stim
+sim.k <- random.sim.k
+
 do_a_survey(
-    calcsd_levels=c(.05,.1,.25),
-    ordsd_levels=c(.15,.15,.15),
-    tolerance_levels=c(.1,.1,.1),
-    model_names=rep("getchoices.stan",3),
-    targfolder="inspect_calcsd"
+    calcsd_levels=c(.2),
+    ordsd_levels=c(.2),
+    tolerance_levels=c(.1),
+    model_names=c("getchoices.stan"),
+    targfolder="recovery_check"
     )
+
+View("done")
+
+#ideal responses: c(1,1,1,3,2,2)

@@ -1,0 +1,39 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+rm(list=ls())
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+
+load(list.files(pattern="RData.")[1])
+stop("k")
+
+datalist = list(hm_trials=nrow(simexp.df),
+                hm_ppnts=hm_ppnts,
+                ppntid=simexp.df$ppntid,
+
+                hm_options=hm_options,
+                hm_attributes=hm_attributes,
+
+                truth_trial_option_attribute = ttoa,
+
+                choice=simexp.df$choice
+                )
+
+recovery.fit <- stan(file="agentRecovery.stan",
+           data=datalist,
+           iter=1000,
+           chains=4,
+           init=function(){
+               zeros <- rep(0,nrow(simexp.df)*hm_options*hm_attributes)
+               dim(zeros)=c(nrow(simexp.df),hm_options,hm_attributes)
+               list(est_trial_option_attribute=zeros)
+           },
+           control = list(max_treedepth = 15));
+
+save(recovery.fit,file="recovery_fit.RData");
+
+recovery.samples <- as.data.frame(extract(recovery.fit, permuted = TRUE)) # extract returns a list of arrays
+
+save.image(file="sim_runeverything_completefit.RData")

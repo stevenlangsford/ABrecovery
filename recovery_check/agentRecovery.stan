@@ -8,35 +8,15 @@ data{
 
   matrix[hm_options,hm_attributes] truth_trial_option_attribute[hm_trials];
 
-  //choice generation and agent recovery differ here.
-  //fixed when generating choices, otherwise inferred:
-  /* vector[hm_attributes] k[hm_ppnts]; */
-  /* real calcsd_level; //scalars at the moment (no individual differences), but could easily pass as vectors like for k. */
-  /* real ordsd_level; */
-  /* real tolerance_level; */
-  //absent when generating choices, otherwise included:
-   int choice[hm_trials]; //ppnt responses!
+  int choice[hm_trials];
 }
 
 parameters{
   //*inferred ppnt parameters*
   simplex[hm_attributes] k[hm_ppnts];//implicit prior is uniform over valid simplexes
-  real calcsd;
-  real ordsd;
-  real tolerance;
-
-  //if ppnts are identical
-  calcsd ~ uniform(.5,2);//[hm_ppnts]; //no indi differences yet, keeping things simple.
-  ordsd ~ uniform(.5,2);//[hm_ppnts];
-  tolerance ~normal(0,.5);//[hm_ppnts];
-
-  //if ppnts are distinct:
-  /* for(appnt in 1:hm_ppnts){ */
-  /*   calcsd[appnt]=calcsd_level;
-  /*   ordsd[appnt]=ordsd_level;//Could consider one shared variability parameter? */
-  /*   tolerance[appnt]=tolerance_level; */
-  /* } */
-  
+  real<lower=0> calcsd[hm_ppnts];
+  real<lower=0> ordsd[hm_ppnts];
+  real<lower=0> tolerance[hm_ppnts];  
   //attribute estimates
   matrix[hm_options,hm_attributes]  est_trial_option_attribute[hm_trials];
   vector[hm_options] calcobs[hm_trials];
@@ -44,9 +24,15 @@ parameters{
 }//end parameters
 
 model{
-  //local variables:
+    //local variables:
   vector[hm_options] estval[hm_trials];
   vector[3] ordprob_trial_option1_option2_attribute_status[hm_trials,hm_options,hm_options,hm_attributes]; //where 'status' means <,=,>, coded as 1,2,3
+  
+  for(appnt in 1:hm_ppnts){
+    calcsd[appnt]~ normal(.5,2);
+    ordsd[appnt]~ normal(.5,2);
+    tolerance[appnt]~normal(0,.5);
+  }
 
   //model:
 
@@ -62,6 +48,10 @@ model{
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
       //this double ~  looks weird if you think of ~ as sampling, but makes sense if you think of it as incrementing target prob, which is what it's actually doing.
+      /* print(atrial); */
+      /* print(ppntid[atrial]); */
+      /* print(calcsd[ppntid[atrial]]); */
+      /* print("***"); */
       calcobs[atrial,anoption]~normal(truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]);//calcobs & truth consistency is good
       calcobs[atrial,anoption]~normal(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]],calcsd[ppntid[atrial]]); //calcobs & attribute-estimate consistency is also good.
       //together these leave the true attribute values 'communicating' with the estimates indirectly via the calculation observation.
@@ -89,7 +79,7 @@ model{
   //observe a choice
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
-      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7; //note hacky extremification (see choice generation)
+      estval[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7; //note hacky extremification (see choice generation)
     }
     choice[atrial]~categorical_logit(estval[atrial]);
   }
