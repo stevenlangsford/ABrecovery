@@ -31,9 +31,9 @@ for(afile in list.files(targfolder,pattern=".RData")){
     load(file=paste0(targfolder,afile))
 
     choicesummary.df <- t(rbind(
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==1)}),
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==2)}),
-        withdecoy.samples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==3)})
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==1)}),
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==2)}),
+        mysamples%>%dplyr::select(contains("generated_choice"))%>%summarize_all(function(x){sum(x==3)})
     ))%>%as.data.frame
 
     choicesummary.df$trialid <- simexp.df$trialid
