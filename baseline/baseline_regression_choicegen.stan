@@ -9,12 +9,13 @@ data{
   matrix[hm_options,hm_attributes] truth_trial_option_attribute[hm_trials];
 
   real calcsd;
+  simplex[hm_attributes] k[hm_ppnts];
+
   //  int choice[hm_trials];
 }
 
 parameters{
   //*inferred ppnt parameters*
-  simplex[hm_attributes] k[hm_ppnts];//implicit prior is uniform over valid simplexes
   //value estimate
   vector[hm_options] estval[hm_trials];
   //  real alpha; //extremification param?

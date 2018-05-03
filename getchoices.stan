@@ -27,7 +27,7 @@ transformed data{
     //setup ppnts
   for(appnt in 1:hm_ppnts){
     calcsd[appnt]=calcsd_level;//No individual differences ATM, but no barrier to adding them.
-    ordsd[appnt]=ordsd_level;//Could consider one shared variability parameter?
+    ordsd[appnt]=ordsd_level;
     tolerance[appnt]=tolerance_level;
   }
 }
@@ -94,7 +94,7 @@ model{
   /*   } */
   /*   choice[atrial]~categorical_logit(estval[atrial]); */
   /* } */
-  
+
 }//model block
 
 generated quantities{
@@ -102,7 +102,7 @@ generated quantities{
   vector[hm_options] estval_tracker[hm_trials];//required to generate choices
   vector[hm_options] estval_tracker_raw[hm_trials];//diag check
   vector[hm_options] trueval_tracker[hm_trials];//diag only
-  vector[hm_options] ordprob_tracker[hm_trials,hm_options,hm_options,hm_attributes]; //diag only
+  vector[3] ordprob_tracker[hm_trials,hm_options,hm_options,hm_attributes]; //diag only
 
   //track the ordinal observation probs
   for(atrial in 1:hm_trials){
@@ -125,7 +125,7 @@ generated quantities{
 //track est and true value to agent, generate a choice from (extremified) est value  
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
-      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Mult-10 intended to avoid underflow. Is this even legit? what's the better way?
+      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Mult-10 intended to avoid underflow, values are typically <|1|, and collapse to zero if used raw. Is this even legit? what's the better way?
       estval_tracker_raw[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]); //check the move towards hardmax is not insane.
       trueval_tracker[atrial,anoption]=truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]];
     }

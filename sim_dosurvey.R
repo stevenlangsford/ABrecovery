@@ -7,24 +7,35 @@ set.seed(4)
 
 ##sim exp set up: ppnts and stim, which are held constant over different iterations of a survey. These are referenced inside do_a_survey, it's not stand-alone.
 
-hm_ppnts=2 #ppnts are identical for now, but provide repetition over the stimuli to check choice-proportions: each participant sees each stim once.
-hm_options=3 #can change to 2 if you want, extra options will just be ignored if present.
-hm_attributes=2; #Must match the stim df provided, it's up to you to stay consistent.
-
-#Options for sim.k:
+                                        #Options for sim.k:
+hm_attributes=2
+hm_ppnts=2
 even.sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts,byrow=TRUE)#,# demo1: even weight on all attributes: all ppnts are identical (byrow necessary if you're filling with anything other than uniform values).
 random.sim.k <- rdirichlet(hm_ppnts,rep(1,hm_attributes)) #demo2, random weights, all ppnts are different. Doesn't make much sense with the context effect demo stim, which are set up fo .5,.5 weights.
 
 #Options for stimuli:                   
 context_demo_stim <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
-1,0.25,0.75,0.75,0.25,.15,.75
+1,0.25,0.75,0.75,0.25,.10,.75
 2,0.25,0.75,0.75,0.25,.25,.60
 3,0.25,0.75,0.75,0.25,.15,.65
-4,0,1,1,0,0.5,0.5
+4,0.6,1,1,0.6,0.8,0.8
 5,0.25,0.75,0.75,0.25,0.2,0.8
 6,0.25,0.75,0.75,0.25,0.3,0.7",
 header=TRUE, sep=",") #'base' stim are {.25,.75} & its reflection, both have value .5 under weights {.5,.5}. '3rd option' decoys: match A worse on B, match B worse on A, worse on both, compromise candidate on equivalue line, similarity candidates close by on equivalue line.
 
+context_demo_withflip <- read.table(text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
+1,0.25,0.75,0.75,0.25,0.1,0.75
+2,0.25,0.75,0.75,0.25,0.25,0.6
+3,0.25,0.75,0.75,0.25,0.15,0.65
+4,0.6,1,1,0.6,0.8,0.8
+5,0.25,0.75,0.75,0.25,0.2,0.8
+6,0.25,0.75,0.75,0.25,0.3,0.7
+7,0.75,0.25,0.25,0.75,0.75,0.1
+8,0.75,0.25,0.25,0.75,0.6,0.25
+9,0.75,0.25,0.25,0.75,0.65,0.15
+10,1,0.6,0.6,1,0.8,0.8
+11,0.75,0.25,0.25,0.75,0.8,0.2
+12,0.75,0.25,0.25,0.75,0.7,0.3",header=TRUE,sep=",")
 
 shifted_compromise_stim <- read.table(
     text="trialid,option1attribute1,option1attribute2,option2attribute1,option2attribute2,option3attribute1,option3attribute2
@@ -52,10 +63,14 @@ for(atrial in 1:30){
 random_stim$trialid <- 1:nrow(random_stim)
 
 #look at the effects of noise and tolerance levels.
-do_a_survey <- function(calcsd_levels,ordsd_levels,tolerance_levels,model_names,targfolder){
-
+do_a_survey <- function(calcsd_levels,ordsd_levels,tolerance_levels,model_names,targfolder,
+                        hm_ppnts=2,
+                        hm_options=3, #can change to 2 if you want, extra options will just be ignored if present.
+                        hm_attributes=2 #Must match the stim df provided, it's up to you to stay consistent.
+){
     ##factors to manipulate should be vectors (of the same length), targfolder name a dir that exists in getwd() (passed without / suffix).
-hm_surveypoints <- length(calcsd_levels)
+
+    hm_surveypoints <- length(calcsd_levels)
 if(!all(as.logical(map(list(calcsd_levels,ordsd_levels,tolerance_levels,model_names), function(x){length(x)==hm_surveypoints}))))stop("ragged setup lists")
 if(!targfolder%in%list.files())dir.create(targfolder);
 if(!all(model_names%in%list.files()))stop("model not found")
@@ -266,16 +281,43 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     targfolder="recovery_check"
 ##     )
 
-simexp.df <- context_demo_stim
+
+
+##TWO OPTION TEST
+## twooption_stim <- data.frame(option1attribute1=c(),option1attribute2=c(),option2attribute1=c(),option2attribute2=c())
+
+## for(i in seq(from=.1,to=1.5,length=5)){
+##     twooption_stim <- rbind(twooption_stim,data.frame(option1attribute1=0,option1attribute2=0,option2attribute1=0,option2attribute2=i))
+##     twooption_stim <- rbind(twooption_stim,data.frame(option1attribute1=0,option1attribute2=0,option2attribute1=i,option2attribute2=0))
+##     twooption_stim <- rbind(twooption_stim,data.frame(option1attribute1=0,option1attribute2=0,option2attribute1=i,option2attribute2=i))
+## }
+## twooption_stim$trialid <- 1:nrow(twooption_stim)
+
+## simexp.df <- twooption_stim#context_demo_withflip
+## sim.k <- even.sim.k
+
+## do_a_survey(
+##     calcsd_levels=rep(.1,8),
+##     ordsd_levels=rep(.1,8),
+##     tolerance_levels=seq(from=.05,to=.3,length=8),
+##     model_names=rep("getchoices.stan",8),
+##     targfolder="twooption_test/normpriors",
+##     hm_options=2
+##     )
+
+
+simexp.df <- context_demo_withflip
 sim.k <- even.sim.k
 
 do_a_survey(
-    calcsd_levels=c(seq(from=.05,to=.35,length=8),rep(.1,8)),
-    ordsd_levels=c(rep(.15,8),seq(from=.05,to=.35,length=8)),
-    tolerance_levels=rep(.1,16),
-    model_names=rep("getchoices.stan",16),
-    targfolder="noisesurvey"
+    calcsd_levels=rep(.15,10),
+    ordsd_levels=rep(.15,10),
+    tolerance_levels=seq(from=.05,to=.3,length=10),
+    model_names=rep("getchoices.stan",10),
+    targfolder="giftolchange",
+    hm_options=3
     )
+
 
 View("done")
 

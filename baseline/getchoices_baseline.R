@@ -29,6 +29,7 @@ datalist = list(hm_trials=nrow(simexp.df),
                 truth_trial_option_attribute = ttoa,
 
                 calcsd=.2,
+                k=sim.k,
                 choice=simexp.df$choice                
                 )
 
