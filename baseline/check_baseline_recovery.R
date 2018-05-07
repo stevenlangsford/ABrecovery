@@ -2,7 +2,7 @@ library(tidyverse)
 library(rstan)
 library(shinystan)
 
-##load("regression_recovery.RData")
+load("regression_recovery.RData")
 
 k.samples <- recovery.samples%>%select(contains("k."))
 
