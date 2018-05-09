@@ -306,16 +306,15 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     )
 
 
-simexp.df <- context_demo_withflip
+simexp.df <- context_demo
 sim.k <- even.sim.k
 
-
 do_a_survey(
-    calcsd_levels=c(.15),
-    ordsd_levels=c(.15),
-    tolerance_levels=c(.1),
-    model_names=rep("getchoices_draword.stan",1),
-    targfolder="draw_ord",
+    calcsd_levels=c(.15,.15),
+    ordsd_levels=c(.15,.15),
+    tolerance_levels=c(.1,.1),
+    model_names=c("getchoices.stan","getchoices_ORD_OFF.stan"),
+    targfolder="with_or_sans_ord",
     hm_options=3
     )
 

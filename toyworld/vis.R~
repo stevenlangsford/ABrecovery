@@ -1,0 +1,16 @@
+library(tidyverse)
+rm(list=ls())
+load("test.RData")
+
+
+targpair = "6"
+sansord="sans"
+withord="with"
+ggplot()+ geom_point(data=target.samples,aes_string(x=paste0("x1_est.",targpair),y=paste0("x2_est.",targpair),color="withord"),alpha=.2)+
+    theme_bw()
+
+#ggplot(withord.samples)+geom_point(aes(x=x1.1,y=x2.1))+theme_bw()
+
+#ggplot(sans.samples)+geom_point(aes(x=x1.1,y=x2.1,color=x1.1>x2.1))+theme_bw()
+
+print(data.df)

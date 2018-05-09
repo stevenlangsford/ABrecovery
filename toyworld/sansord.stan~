@@ -1,0 +1,40 @@
+data{
+  int n;
+  real x1[n];
+  real x2[n];
+  
+  real tolerance;
+  real calcnoise;
+  real orderr;
+}
+
+transformed data{
+  real mysum[n];
+  int ord[n];
+
+  for(i in 1:n){
+    mysum[i]=x1[i]+x2[i];
+    ord[i] = (fabs(x1[i]-x2[i]) < tolerance) ? 2 : x1[i]<x2[i] ? 1 : 3;
+  }
+  
+}
+
+parameters{
+  real x1_est[n];
+  real x2_est[n];
+}
+
+model{
+  int ord_consistent[n];
+
+  //priors
+  x1_est~normal(0,1);
+  x2_est~normal(0,1);
+
+  for(i in 1:n){
+    ord_consistent[i] = (ord[i] == (fabs(x1_est[i]-x2_est[i]) < tolerance ? 2 : x1_est[i] < x2_est[i] ? 1 : 3)) ? 1 : 0;
+    mysum[i]~normal(x1_est[i]+x2_est[i],calcnoise);//dead-reckoning estimate, subject to some noise.
+  }
+  
+#  target += bernoulli_lpmf(ord_consistent | 1-orderr);
+}

@@ -56,8 +56,8 @@ parameters{
 model{
   //local variables:
   vector[hm_options] estval[hm_trials];//for calc obs
-    int relationcounter;
-    int relationsuccess[hm_trials,hm_options*(hm_options-1)/2*hm_attributes];
+  //  int relationcounter;
+  //  int relationsuccess[hm_trials,hm_options*(hm_options-1)/2*hm_attributes];
   
     //populate estimated attribute values from their priors:
   for(atrial in 1:hm_trials){
@@ -71,20 +71,28 @@ model{
 
   //These are the est relations successes and failures from the current attribute estimates:
   for(atrial in 1:hm_trials){
-    relationcounter=0;
+    //    relationcounter=0;
     for(option1 in 2:hm_options){
       for(option2 in 1:(option1-1)){//only compare in one direction, no self comparisons.
 	for(anattribute in 1:hm_attributes){
-	  relationcounter=relationcounter+1;
-	  relationsuccess[atrial,relationcounter]=((fabs(est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : est_trial_option_attribute[atrial,option1,anattribute]<est_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3)==true_relation_trial_attribute_option1_option2[atrial,anattribute,option1,option2]) ? 1 : 0;
-	  
-	}//end attribute
+	  //	  relationcounter=relationcounter+1;
+	  if((fabs(est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : est_trial_option_attribute[atrial,option1,anattribute]<est_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3)==true_relation_trial_attribute_option1_option2[atrial,anattribute,option1,option2]) target += binomial_lpmf(1 | 1,1-orderr);
+	  else{target += binomial_lpmf(0 | 1,1-orderr);}
+	    }//end attribute
       }//end option1
     }//end option2
     
     /* print("trial"); */
-
-    target += bernoulli_lpmf(relationsuccess[atrial] | 1-orderr); 
+    /* print(atrial); */
+    /* print("est option 1"); */
+    /* print(est_trial_option_attribute[atrial,1]); */
+    /* print("est option 2"); */
+    /* print(est_trial_option_attribute[atrial,2]); */
+    /* print("est option 3"); */
+    /* print(est_trial_option_attribute[atrial,3]); */
+    /* print("success count:"); */
+    /* print(relation_successcount); */
+    //    relationsuccess[atrial]~bernoulli(1-orderr); 
   }   //end atrial
     
    //model:
@@ -113,8 +121,6 @@ generated quantities{
   vector[hm_options] estval_tracker[hm_trials];//required to generate choices
   vector[hm_options] estval_tracker_raw[hm_trials];//diag check
   vector[hm_options] trueval_tracker[hm_trials];//diag only
-  int relation_tracker[hm_trials,hm_options*(hm_options-1)/2*hm_attributes];
-  int relationcounter;
   
 //track est and true value to agent, generate a choice from (extremified) est value  
   for(atrial in 1:hm_trials){
@@ -125,29 +131,4 @@ generated quantities{
     }
     generated_choice[atrial]=categorical_logit_rng(estval_tracker[atrial]);
   }
-
-  //track ord obs success
-    for(atrial in 1:hm_trials){
-    relationcounter=0;
-    for(option1 in 2:hm_options){
-      for(option2 in 1:(option1-1)){//only compare in one direction, no self comparisons.
-	for(anattribute in 1:hm_attributes){
-	  relationcounter=relationcounter+1;
-	  relation_tracker[atrial,relationcounter]=((fabs(est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : est_trial_option_attribute[atrial,option1,anattribute]<est_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3)==true_relation_trial_attribute_option1_option2[atrial,anattribute,option1,option2]) ? 1 : 0;
-	  
-	  /* print("trial ",atrial, " relationindex ", relationcounter, " is option1 ",option1," vs option2 ",option2, " attribute ",anattribute); */
-	  /* print("est:",est_trial_option_attribute[atrial,option1,anattribute], "vs", est_trial_option_attribute[atrial,option2,anattribute], */
-	  /* 	"|| truth ", truth_trial_option_attribute[atrial,option1,anattribute],"vs",truth_trial_option_attribute[atrial,option2,anattribute]); */
-	  /* print("success: ",relation_tracker[atrial,relationcounter]) */
-	  
-	}//end attribute
-      }//end option1
-    }//end option2
-    
-    /* print("trial"); */
-
-    //    relationsuccess[atrial]~bernoulli(1-orderr); 
-  }   //end atrial
-
-  
 }

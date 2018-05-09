@@ -1,0 +1,30 @@
+data{
+  int n;
+  int ord[n]; //ordinal relation <,=,> coded as 1,2,3
+  real mysum[n];//true value of x1+x2
+  real tolerance;
+}
+
+parameters{
+  real x1[n];
+  real x2[n];
+}
+
+model{
+  int ord_consistent[n];
+
+  //priors
+  x1~normal(0,1);
+  x2~normal(0,1);
+
+  for(i in 1:n){
+    if(ord[i]==1) ord_consistent[i] = x2[i]-x1[i] < (-tolerance) ? 1 : 0;
+    if(ord[i]==2) ord_consistent[i] = fabs(x2[i]-x1[i]) < tolerance ? 1 : 0;
+    if(ord[i]==3) ord_consistent[i] = x2[i]-x1[i] > tolerance ? 1 : 0;
+  }
+  
+  for(i in 1:n){
+    mysum[i]~normal(x1[i]+x2[i],0.1);//dead-reckoning estimate, subject to some noise.
+  }
+  target += bernoulli_lpmf(ord_consistent | .9);//.5 chance of the ordinal observation being wrong.
+}

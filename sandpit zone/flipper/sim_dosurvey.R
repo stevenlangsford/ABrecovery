@@ -145,7 +145,7 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 #do_a_survey args: calcsd_levels,ordsd_levels,tolerance_levels,modelnames,targfolder
 
 
-simexp.df <- context_demo_withflip
+simexp.df <- context_demo_stim
 sim.k <- even.sim.k
 
 
@@ -154,7 +154,7 @@ do_a_survey(
     ordsd_levels=c(.01),
     tolerance_levels=c(.1),
     model_names=rep("getchoices_flipper.stan",1),
-    targfolder="test",
+    targfolder="withtracker",
     hm_options=3
     )
 
