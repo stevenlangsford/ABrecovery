@@ -306,16 +306,23 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     )
 
 
-simexp.df <- context_demo
-sim.k <- even.sim.k
+simexp.df <- read.csv("fun_for_ks_stim.csv")
+
+sim.k <- matrix(c( #this just happens to be the set of k vals that were used to generate "fun stim". Not that that is particularly relevant...
+ 0.07614139, 0.9238586,
+ 0.68334882, 0.3166512,
+ 0.51347987, 0.4865201,
+ 0.76308393, 0.2369161,
+ 0.37574002, 0.6242600), nrow=5,ncol=2,byrow=TRUE)
 
 do_a_survey(
-    calcsd_levels=c(.15,.15),
-    ordsd_levels=c(.15,.15),
-    tolerance_levels=c(.1,.1),
-    model_names=c("getchoices.stan","getchoices_ORD_OFF.stan"),
-    targfolder="with_or_sans_ord",
-    hm_options=3
+    calcsd_levels=c(.15),
+    ordsd_levels=c(.15),
+    tolerance_levels=c(.1),
+    model_names=c("getchoices.stan"),
+    targfolder="range_of_k_stim",
+    hm_options=3,
+    hm_ppnts=nrow(sim.k)
     )
 
 ## do_a_survey(

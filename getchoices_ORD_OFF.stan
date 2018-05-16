@@ -18,32 +18,38 @@ data{
   //  int choice[hm_trials]; //ppnt responses!
 }
 
+transformed data{
+  //for agent recovery, move all this stuff to model block and replace assignment with sampling statements.
+  real calcsd[hm_ppnts];
+  real ordsd[hm_ppnts];
+  real tolerance[hm_ppnts];
+
+    //setup ppnts
+  for(appnt in 1:hm_ppnts){
+    calcsd[appnt]=calcsd_level;//No individual differences ATM, but no barrier to adding them.
+    ordsd[appnt]=ordsd_level;
+    tolerance[appnt]=tolerance_level;
+  }
+}
+
 parameters{
   //*inferred ppnt parameters*
   //  simplex[hm_attributes] k[hm_ppnts];//implicit prior is uniform over valid simplexes
 
   //attribute estimates
   matrix[hm_options,hm_attributes]  est_trial_option_attribute[hm_trials];
-
-  vector[hm_options] calcobs[hm_trials]; //ordobs appears as a local variable in the model rather than defined in params block.
+  vector[hm_options] calcobs[hm_trials];
+  //ordobs appears as a local variable in the model rather than defined in params block (because it takes assignment on the fly, and declaration-assignment need to be in the same block)
 }//end parameters
 
 model{
-  real calcsd[hm_ppnts];
-  real ordsd[hm_ppnts];
-  real tolerance[hm_ppnts];
 
-  //actual local variables:
+  //local variables:
   vector[hm_options] estval[hm_trials];
   vector[3] ordprob_trial_option1_option2_attribute_status[hm_trials,hm_options,hm_options,hm_attributes]; //where 'status' means <,=,>, coded as 1,2,3
 
   //model:
-  //setup ppnts
-  for(appnt in 1:hm_ppnts){
-    calcsd[appnt]=calcsd_level;//No individual differences ATM, but no barrier to adding them.
-    ordsd[appnt]=ordsd_level;//Could consider one shared variability parameter?
-    tolerance[appnt]=tolerance_level;
-  }
+
   //populate estimated attribute values from their priors:
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
@@ -62,19 +68,20 @@ model{
     }
   }
   
-  //apply the ordinal observation:
+  /* //apply the ordinal observation: */ //THIS IS ORD OFF
   /* for(atrial in 1:hm_trials){ */
   /*   for(option1 in 2:hm_options){//indexes for lower triangle only: comparisons are directionless & not with self */
   /*     for(option2 in 1:(option1-1)){ */
   /* 	for(anattribute in 1:hm_attributes){//should consider switching to phi_approx instead of normal_cdf for better numerical performance. */
   /* 	  //prob status '<': phi(-tolerance) */
-  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]); */
+  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]]); */
   /* 	  //prob of status '=':phi(tolerance)-phi(-tolerance) */
-  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]])-ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]; */
+  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]])-ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,1]; */
   /* 	  //prob of status '>': 1-phi(tolerance) */
-  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],2*ordsd[ppntid[atrial]]); */
+  /* 	  ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]]); */
 
-  /* 	  target += categorical_lpmf(fabs(truth_trial_option_attribute[atrial,option1,anattribute]-truth_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : truth_trial_option_attribute[atrial,option1,anattribute]<truth_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3 | ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute]);//Before the pipe: nested ternary if, evaluates to true relation between options 1 & 2 on target attribute {1:'<',2:'=',3:'>'}: after pipe: the probability of each outcome given the current attribute estimates, a vector length 3 over the possible status values {<,=,>}. Results in a 'reward' being added to the target variable when attribute estimates are 'more consistent' with the true ordinal relations. */
+  /* 	  //THIS IS ORD_OFF */
+  /* 	  	  target += categorical_lpmf(fabs(truth_trial_option_attribute[atrial,option1,anattribute]-truth_trial_option_attribute[atrial,option2,anattribute])<tolerance[ppntid[atrial]] ? 2 : truth_trial_option_attribute[atrial,option1,anattribute]<truth_trial_option_attribute[atrial,option2,anattribute] ? 1 : 3 | ordprob_trial_option1_option2_attribute_status[atrial,option1,option2,anattribute]);//Before the pipe: nested ternary if, evaluates to true relation between options 1 & 2 on target attribute {1:'<',2:'=',3:'>'}: after pipe: the probability of each outcome given the current attribute estimates, a vector length 3 over the possible status values {<,=,>}. Results in a 'reward' being added to the target variable when attribute estimates are 'more consistent' with the true ordinal relations. */
   /* 	}//attribute */
   /*     }//option2 */
   /*   }//option1 */
@@ -88,17 +95,39 @@ model{
   /*   } */
   /*   choice[atrial]~categorical_logit(estval[atrial]); */
   /* } */
-  
+
 }//model block
 
 generated quantities{
-  int generated_choice[hm_trials];
-  vector[hm_options] estval_tracker[hm_trials];
-  vector[hm_options] trueval_tracker[hm_trials];
+  int generated_choice[hm_trials];//required: return value.
+  vector[hm_options] estval_tracker[hm_trials];//required to generate choices
+  vector[hm_options] estval_tracker_raw[hm_trials];//diag check
+  vector[hm_options] trueval_tracker[hm_trials];//diag only
+  vector[3] ordprob_tracker[hm_trials,hm_options,hm_options,hm_attributes]; //diag only
+
+  //track the ordinal observation probs
+  for(atrial in 1:hm_trials){
+    for(option1 in 1:hm_options){//fill whole array in tracker even though it's redundant/meaningless: otherwise you get an invalid stan object.
+      for(option2 in 1:hm_options){
+	for(anattribute in 1:hm_attributes){//should consider switching to phi_approx instead of normal_cdf for better numerical performance.
+	  //	    -est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]]
+	  //prob status '<': phi(-tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,1]=normal_cdf(-tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]]);
+	  //prob of status '=':phi(tolerance)-phi(-tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,2]=normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]])-ordprob_tracker[atrial,option1,option2,anattribute,1];
+	  //prob of status '>': 1-phi(tolerance)
+	  ordprob_tracker[atrial,option1,option2,anattribute,3]=1-normal_cdf(tolerance[ppntid[atrial]],est_trial_option_attribute[atrial,option1,anattribute]-est_trial_option_attribute[atrial,option2,anattribute],ordsd[ppntid[atrial]]);
+	}//attribute
+      }//option2
+    }//option1
+  }//trial
+
   
+//track est and true value to agent, generate a choice from (extremified) est value  
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
-      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]+1)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Plus one avoids underflow when taking values <1 to high powers, although the math works out the same without it the cpu doesn't. This hack assumes estvals are positive though. There's got to be a better way of doing this.
+      estval_tracker[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]*10)^7;//effect of the power is to move softmax towards hard-max, could consider higher powers? Better make them odd though to be sign preserving, estval could be negative. Mult-10 intended to avoid underflow, values are typically <|1|, and collapse to zero if used raw. Is this even legit? what's the better way?
+      estval_tracker_raw[atrial,anoption]=(est_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]]); //check the move towards hardmax is not insane.
       trueval_tracker[atrial,anoption]=truth_trial_option_attribute[atrial,anoption]*k[ppntid[atrial]];
     }
     generated_choice[atrial]=categorical_logit_rng(estval_tracker[atrial]);

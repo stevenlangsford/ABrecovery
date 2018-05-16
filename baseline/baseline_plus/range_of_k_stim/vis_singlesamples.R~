@@ -1,0 +1,134 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+library(patchwork)
+rm(list=ls())
+
+for(afile in list.files(pattern="calc.*RData")){ #biggest, smallest, and just over switchpoint. was: list.files(pattern="^calc.*RData")){
+
+    load(afile)
+
+    targfolder=paste0("singlesample/",strsplit(afile,".RData")[1],"plots")
+    dir.create(targfolder);
+    
+    for(arep in 1:3){
+    thissample <- sample_n(mysamples,1)
+    
+    fixedcolors <- c("red","blue","green")#works with scale_fill_maunual
+    colorgetter <- function(id){ #works with independent geoms
+        if(id==1) return("red")
+        if(id==2) return("blue")
+        if(id==3) return("green")
+        stop(paste("bad id in colorgetter ",id))
+    }
+
+
+    stim.plot <- function(trialnumber){
+    estcloud.df <- data.frame()
+for(anoption in 1:3){
+    x <- thissample[,paste("est_trial_option_attribute",trialnumber,anoption,1,sep=".")]
+    y <- thissample[,paste("est_trial_option_attribute",trialnumber,anoption,2,sep=".")]
+    est.value <-     thissample[,paste("estval_tracker_raw",trialnumber,anoption,sep=".")]
+    calcobs <- thissample[,paste("calcobs",trialnumber,anoption,sep=".")]
+    estcloud.df <- rbind(estcloud.df,data.frame(option=anoption,x=x,y=y,est.value=est.value,calcobs=calcobs))
+}
+
+    #this hard-assumes the 2 attribute case. Oh well. 
+    xcomb=seq(from=-2,to=3,length=50) #range matches xlim on plot later
+    myweights = sim.k[datalist$ppntid[trialnumber],]
+
+                                        #k1*x+k2*y=calcobs
+                                        #k2y=calcobs-k1x
+                                        #y=(calcobs-k1x)/k2
+    calcobs.df <- data.frame(
+        x=xcomb,
+        y1=(estcloud.df$calcobs[1]-myweights[1]*xcomb)/myweights[2],
+        y2=(estcloud.df$calcobs[2]-myweights[1]*xcomb)/myweights[2],
+        y3=(estcloud.df$calcobs[3]-myweights[1]*xcomb)/myweights[2]
+    )
+    
+ #   y_option1 =
+#        myweights[1]*+myweights[2]
+    
+    ggplot(simexp.df[trialnumber,])+
+        #est cloud and est-cloud centre
+        geom_point(data=estcloud.df,aes(x=x,y=y,color=as.factor(option)),alpha=.05,size=2)+
+        geom_point(
+            data=estcloud.df%>%group_by(option)%>%summarize(x=mean(x),y=mean(y),est.value=mean(est.value))%>%as.data.frame,
+            aes(x=x,y=y,color=as.factor(option)),alpha=1,size=5,shape=13)+
+        scale_color_manual(1:3,values=fixedcolors)+
+                                        #actual stim truth
+#            geom_line(data=data.frame(x=c(0,1),y=c(1,0)),aes(x=x,y=y),alpha=.9,color="grey",linetype="dotted",size=2)+
+            geom_point(aes(x=option1attribute1,y=option1attribute2),color=colorgetter(1),size=5)+
+            geom_point(aes(x=option2attribute1,y=option2attribute2),color=colorgetter(2),size=5)+
+        geom_point(aes(x=option3attribute1,y=option3attribute2),color=colorgetter(3),size=5)+
+        guides(color=FALSE)+
+    theme_bw()+xlim(c(-2,3))+ylim(c(-2,3))+
+    #add calcobs lines
+    geom_line(data=calcobs.df,aes(x=x,y=y1),color="red")+
+    geom_line(data=calcobs.df,aes(x=x,y=y2),color="blue")+
+    geom_line(data=calcobs.df,aes(x=x,y=y3),color="green")+ggtitle(paste("trialnumber ",trialnumber,"stim",simexp.df[trialnumber,"trialid"],"ppnt",simexp.df[trialnumber,"ppntid"],"k",signif(sim.k,3),sep=" "))
+    }
+
+    ordprobs <- thissample%>%select(contains("ordprob_tracker"))
+
+    for(trialnumber in 1:nrow(simexp.df)){
+        thischoice=thissample[,paste0("generated_choice.",trialnumber)]
+        statusprobs.df <- data.frame();
+
+        ##label code:
+        labeller <- function(variable,value){
+            optionlabels = list("1"="red",
+                                "2"="blue",
+                                "3"="green")
+            attributelabels = list("1"="X",
+                                   "2"="Y")
+            
+            if(variable%in%c("option1","option2")){
+                return(optionlabels[value])
+            }else{
+                return(attributelabels[value])
+            }
+        }
+        
+        
+        for(option1 in 1:3){
+            for(option2 in 1:3){
+                
+                for(attribute in 1:2){
+                    statusprobs.df <- rbind(statusprobs.df,
+                                            data.frame(trialnumber=trialnumber,
+                                                       option1=option1,
+                                                       option2=option2,
+                                                       attribute=as.factor(attribute),
+                                                       status=c("<","=",">"),
+                                                       prob=sapply(1:3,function(status){mean(thissample[,paste("ordprob_tracker",trialnumber,option1,option2,attribute,status,sep=".")])})
+                                                       ))
+                }
+            }
+        }
+
+
+        statusprobs.plot <- ggplot(statusprobs.df,aes(x=status,y=prob,fill=attribute))+geom_bar(stat="identity")+theme_bw()+facet_grid(attribute~option1+option2,labeller=labeller)+guides(fill=FALSE)
+
+        choicesummary.df <- thissample%>%dplyr::select(paste0("generated_choice.",trialnumber))%>%table%>%as.data.frame
+        names(choicesummary.df) <- c("optionchosen","count")
+
+        overall.df <- mysamples%>%dplyr::select(paste0("generated_choice.",trialnumber))%>%table%>%as.data.frame
+        names(overall.df) <- c("optionchosen","count")
+        choicetotal <- sum(overall.df$count)
+        overall.df$count <- signif(overall.df$count/choicetotal,3)
+        
+        endorsement.plot <- (ggplot(choicesummary.df,aes(x=optionchosen,y=count,fill=optionchosen))+geom_bar(stat="identity")+scale_fill_manual(values=fixedcolors)+theme_bw()+xlab("")+guides(fill=FALSE))
+
+        # can also add statusprobs.plot back in if you want!
+        ggsave(stim.plot(trialnumber)+
+               geom_text(aes(x=2,y=2,label=paste("chose",c("red","blue","green")[thischoice],"(happens ",overall.df[thischoice,"count"],")"))), #endorsement.plot silly with one sample
+               file=paste0(targfolder,"/trial",trialnumber,"rep",arep,".png"),
+               width=15,
+               height=15
+               )
+    }
+
+}
+}

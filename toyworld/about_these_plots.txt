@@ -1,0 +1,7 @@
+Goal is to infer x1 and x2.
+True values are indicated by the green dot.
+The only information available is the sum (shown as a yellow line of all consistent values), and the ordinal relation (indicated on the title)
+Priors over x1 and x2 are N(0,1)
+Red dots are samples taken from the model with only the calculation observation.
+Blue dots are samples taken from the model with both calculation and ordinal observations.
+Black lines show the limits of `equality' for the ordinal relation.
