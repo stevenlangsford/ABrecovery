@@ -6,8 +6,8 @@ rm(list=ls())
 
 #setwd("vary_tolerance_doubleuniform_II")
 
-#for(afile in list.files(pattern="^calc.*RData")){
-for(afile in list.files(pattern="^baseline.*RData")){
+for(afile in list.files(pattern="^calc.*RData")){
+
     load(afile)
 
     targfolder=paste0(strsplit(afile,".RData")[1],"plots")
@@ -44,13 +44,13 @@ for(anoption in 1:3){
             geom_point(aes(x=option1attribute1,y=option1attribute2),color=colorgetter(1),size=5)+
             geom_point(aes(x=option2attribute1,y=option2attribute2),color=colorgetter(2),size=5)+
         geom_point(aes(x=option3attribute1,y=option3attribute2),color=colorgetter(3),size=5)+
-        guides(color=FALSE)+ggtitle(paste("trialnumber ",trialnumber,"stim",simexp.df[trialnumber,"trialid"],"ppnt",simexp.df[trialnumber,"ppntid"],"k",signif(sim.k[simexp.df[trialnumber,"ppntid"],1],3),sep=" "))+
+        guides(color=FALSE)+
             theme_bw()#+xlim(c(0,1))#+ylim(c(0,1))
     }
 
     ordprobs <- mysamples%>%select(contains("ordprob_tracker"))
 
-    for(trialnumber in 1:nrow(simexp.df)){
+    for(trialnumber in unique(simexp.df$trialid)){
 
         statusprobs.df <- data.frame();
 
@@ -99,4 +99,4 @@ for(anoption in 1:3){
                )
     }#for each unique trialnumber
 
-}#for each fit
+}#for each fit (tolerance level)
