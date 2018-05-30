@@ -64,12 +64,14 @@ random_stim$trialid <- 1:nrow(random_stim)
 
 #look at the effects of noise and tolerance levels.
 do_a_survey <- function(calcsd_levels,ordsd_levels,tolerance_levels,model_names,targfolder,
-                        hm_ppnts=2,
+                        hm_ppnts,
                         hm_options=3, #can change to 2 if you want, extra options will just be ignored if present.
                         hm_attributes=2 #Must match the stim df provided, it's up to you to stay consistent.
 ){
     ##factors to manipulate should be vectors (of the same length), targfolder name a dir that exists in getwd() (passed without / suffix).
-
+    hm_options<<-hm_options #expose to save image, recovery wants to see it. Terrible style o...
+    hm_ppnts<<-hm_ppnts
+    
     hm_surveypoints <- length(calcsd_levels)
 if(!all(as.logical(map(list(calcsd_levels,ordsd_levels,tolerance_levels,model_names), function(x){length(x)==hm_surveypoints}))))stop("ragged setup lists")
 if(!targfolder%in%list.files())dir.create(targfolder);
@@ -306,21 +308,24 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     )
 
 
-simexp.df <- read.csv("fun_for_ks_stim.csv")
+simexp.df <- rbind(read.csv("rndstim.csv"),read.csv("swingaround_lomedhi_stim.csv"))
+simexp.df$trialid <- 1:nrow(simexp.df)
 
-sim.k <- matrix(c( #this just happens to be the set of k vals that were used to generate "fun stim". Not that that is particularly relevant...
- 0.07614139, 0.9238586,
- 0.68334882, 0.3166512,
- 0.51347987, 0.4865201,
- 0.76308393, 0.2369161,
- 0.37574002, 0.6242600), nrow=5,ncol=2,byrow=TRUE)
+sim.k <- matrix(c(.1,.9,.5,.5,.9,.1), nrow=3,ncol=2,byrow=TRUE)
+
+ ##    matrix(c( #if you want the k matrix that generated the fun_for_ks_stim.csv, it's this:
+ ## 0.07614139, 0.9238586,
+ ## 0.68334882, 0.3166512,
+ ## 0.51347987, 0.4865201,
+ ## 0.76308393, 0.2369161,
+ ## 0.37574002, 0.6242600), nrow=5,ncol=2,byrow=TRUE)
 
 do_a_survey(
     calcsd_levels=c(.15),
     ordsd_levels=c(.15),
     tolerance_levels=c(.1),
     model_names=c("getchoices.stan"),
-    targfolder="range_of_k_stim",
+    targfolder="allthestim",
     hm_options=3,
     hm_ppnts=nrow(sim.k)
     )

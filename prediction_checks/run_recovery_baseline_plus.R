@@ -6,7 +6,7 @@ options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
 
-load(paste0("training_choices/",list.files("training_choices",pattern="calc*")[1]))
+load(paste0("training_choices/",list.files("training_choices",pattern="*.RData")[1]))
 hm_ppnts = 5
 hm_options = 3
 hm_attributes = 2 #magic numbers la, better set these in do_survey!
@@ -83,7 +83,7 @@ datalist$test_ordsd=rep(.1,hm_ppnts)
 datalist$test_tolerance=rep(.1,hm_ppnts)
 
 
-recovery.fit <- stan(file="baseline_plus.stan",
+recovery.fit <- stan(file="howes16_solo.stan",#file="baseline_plus.stan",
            data=datalist,
            iter=1000,
            chains=4,
@@ -92,5 +92,5 @@ recovery.fit <- stan(file="baseline_plus.stan",
            );
 
 recovery.samples <- as.data.frame(extract(recovery.fit, permuted = TRUE)) # extract returns a list of arrays
-save.image(file="blplus_recovery.RData")
+save.image(file="howes16solo.RData")#"blplus_recovery.RData")
 View("done")

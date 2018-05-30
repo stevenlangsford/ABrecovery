@@ -4,7 +4,8 @@ library(shinystan)
 rm(list=ls())
 
 
-load("blplus_recovery.RData")
+                                        #load("blplus_recovery.RData")
+load("howes16solo.RData")
 blplus.samples <- recovery.samples;
 rm(list=setdiff(ls(),"blplus.samples"))
 
@@ -19,7 +20,7 @@ rm(list=setdiff(ls(),c("blplus.samples","regression.samples", "sim.samples","sim
 plus.preds <- blplus.samples%>%select(starts_with("predicted"))
 regression.preds <- regression.samples%>%select(starts_with("predicted"))
 sim.outcomes <- sim.samples%>%select(starts_with("generated_choice"))
-modellist = list("plus"=plus.preds,"baseline"=regression.preds,"sim"=sim.outcomes)
+modellist = list("howes16"=plus.preds,"baseline"=regression.preds,"sim"=sim.outcomes)
 
 ##****************************************************************************************************
 mode.so <- function(x) { #credit stack overflow
@@ -33,11 +34,11 @@ for(astim in unique(simexp.df$trialid)){
         targ.trial = which(simexp.df$trialid==astim&simexp.df$ppntid==appnt)
         for(achoice in 1:3){
             for(amodel in 1:length(modellist)){
-                success.status = c(mode.so(modellist[["plus"]][,targ.trial])==mode.so(modellist[["sim"]][,targ.trial]),
+                success.status = c(mode.so(modellist[["howes16"]][,targ.trial])==mode.so(modellist[["sim"]][,targ.trial]),
                                    mode.so(modellist[["baseline"]][,targ.trial])==mode.so(modellist[["sim"]][,targ.trial]))
                 if(sum(success.status)==0)success.status.flag="neither"
                 if(sum(success.status)==2)success.status.flag="both"
-                if(sum(success.status)==1)success.status.flag=ifelse(success.status[1]==1,"plus","baseline")#there has got to be a better way than this :-(
+                if(sum(success.status)==1)success.status.flag=ifelse(success.status[1]==1,"howes16","baseline")#there has got to be a better way than this :-(
                 
                 
                 compare.df <- rbind(compare.df,data.frame(
@@ -58,16 +59,18 @@ for(astim in unique(simexp.df$trialid)){
 }
 
 ##Ok here are the raw results...
-ggplot(compare.df,aes(x=choice,y=count,group=modeltype,fill=modeltype))+
+predictions.plot <-
+
+    ggplot(compare.df,aes(x=choice,y=count,group=modeltype,fill=modeltype))+
     geom_rect(data = compare.df,aes(fill = successstatus),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.1)+
-    geom_bar(stat="identity",position="dodge")+facet_grid(ppntid~trialid)+theme_bw()+scale_fill_brewer(palette="Spectral")
-x11();
+    geom_bar(stat="identity",position="dodge",color="black")+facet_grid(ppntid~trialid)+scale_fill_brewer(palette="RdYlGn")+theme_bw()
+
 ##Here's the "difference from sim", ideally close to zero. A little weird because it's possible for large gaps to appear when the max choice is in the correct spot, the sim is generally quite extreme in its preferences, the recovery conservative/confused.
-ggplot(filter(compare.df,modeltype!="sim"),aes(x=choice,y=sim.gap,group=modeltype,fill=modeltype))+
+preddiffs.plot <- ggplot(filter(compare.df,modeltype!="sim"),aes(x=choice,y=sim.gap,group=modeltype,fill=modeltype))+
     geom_rect(data = compare.df,aes(fill = successstatus),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.1)+
-    geom_bar(stat="identity",position="dodge")+facet_grid(ppntid~trialid)+theme_bw()+scale_fill_brewer(palette="Spectral")
+    geom_bar(stat="identity",position="dodge")+facet_grid(ppntid~trialid)+theme_bw()+scale_fill_brewer(palette="RdYlGn")
 
 
+##OK, so, that's fun. takehomes: the muted k estimates aren't doing howes16 any damage in prediction-land? Prediction ability in this test set is underwhelming, maybe there's not enough data in the simulation?
 
-##possibly also color backgrounds by stim-ppnt matchiness?
-
+print(predictions.plot); x11(); print(preddiffs.plot);

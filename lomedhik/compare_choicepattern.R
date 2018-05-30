@@ -1,0 +1,60 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+library(patchwork)
+
+choice.sources <- list(simtruth="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
+                       baseline="baseline_predict_from_meank/calc0.15ord0.15tolerance0.1modelbaseline_choicegen.stanfit.RData",
+                       howes16="howes16_predict_from_meank/calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
+                       hybrid="hybrid_predict_from_meank/calc0.15ord0.15tolerance0.1modelhybrid_getchoices.stanfit.RData"
+                       )
+
+## choice.sources <- list(simtruth="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
+##                        baseline="baseline_predict_from_originalk/calc0.15ord0.15tolerance0.1modelbaseline_choicegen.stanfit.RData",
+##                        howes16="howes16_predict_from_originalk/calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
+##                        hybrid="hybrid_predict_from_originalk/calc0.15ord0.15tolerance0.1modelhybrid_getchoices.stanfit.RData"
+##                        )
+
+
+choice.df <- data.frame()
+for(asource in 1:length(choice.sources)){
+    load(choice.sources[[asource]])
+    for(i in 1:nrow(simexp.df)){
+        choice.df <- rbind(choice.df,
+                           mysamples%>%select(matches(paste0("^generated_choice.",i,"$")))%>%summarize(ones=sum(.==1),twos=sum(.==2),threes=sum(.==3))%>%
+                           gather(response,count,ones:threes)%>%
+                           mutate(trial=i,
+                                  model=names(choice.sources)[asource],
+                                  response=factor(response,ordered=TRUE,
+                                                  levels=c("ones","twos","threes")),
+                                  ppntid=simexp.df[i,"ppntid"],
+                                  stimid=simexp.df[i,"trialid"]
+                                                  )
+                           )
+    }#end for each trial
+}#end for each source
+
+rm(list=setdiff(ls(),c("choice.df","simexp.df")))
+
+## for(targtrials in 1:nrow(simexp.df)){ #When weights are ok, baseline looks super conservative and others look good. But for 2 ppnts context-informed recovered weights are flat wrong.
+##  print(ggplot(choice.df%>%filter(trial%in%targtrials),aes(x=response,y=count,fill=model))+
+##     geom_bar(stat="identity",position="dodge")+
+##     facet_wrap(~trial)+
+##     theme_bw())
+
+## }
+
+success.df <- data.frame();
+for(targtrial in 1:nrow(simexp.df)){
+    winning.response <- filter(choice.df, trial==targtrial)%>%group_by(model)%>%summarize(winner=response[which(count==max(count))[1]]) #note bad take-first tiebreaker.
+    winning.response$ppntid <- simexp.df[targtrial,"ppntid"]
+    winning.response$stimid <- simexp.df[targtrial,"trialid"]
+    winning.response$correct <-
+        winning.response$winner == as.character(droplevels(as.data.frame(winning.response[winning.response$model=="simtruth","winner"]))[1,])#sheesh.
+    success.df <- rbind(success.df,winning.response)
+}
+
+##ggsave(
+ggplot(success.df,aes(x=stimid,y=ppntid,color=correct))+geom_point(size=5)+facet_wrap(~model)+theme_bw()+
+    geom_vline(data=data.frame(breakat=c(15,30,45)),aes(xintercept=breakat))
+##,file="hybrid_looks_good.png",width=15,height=15)
