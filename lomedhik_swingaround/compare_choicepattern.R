@@ -4,10 +4,10 @@ library(shinystan)
 library(patchwork)
 
 choice.sources <- list(simtruth="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
-                       baseline="baseline_predict_from_meank/calc0.15ord0.15tolerance0.1modelbaseline_choicegen.stanfit.RData",
-#                       howes16="howes16_predict_from_meank/calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
-                       hybrid="hybrid_predict_from_meank/calc0.15ord0.15tolerance0.1modelhybrid_getchoices.stanfit.RData"
-                       )
+                      baseline="baseline_predict_from_meank/calc0.15ord0.15tolerance0.1modelbaseline_choicegen.stanfit.RData",
+#                      howes16="howes16_predict_from_meank/calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
+                      hybrid="hybrid_sanscalc_predict_from_meank/calc0.15ord0.15tolerance0.1modelhybrid_getchoices.stanfit.RData"
+                      )
 
 ## choice.sources <- list(simtruth="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData",
 ##                        baseline="baseline_predict_from_originalk/calc0.15ord0.15tolerance0.1modelbaseline_choicegen.stanfit.RData",

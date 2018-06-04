@@ -65,6 +65,7 @@ save(recovery.fit,file=paste0(modelstring,".RData"))#file="baseline_recovery.RDa
 
 
 targdata="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData"
-recover_k(targdata,"baseline")
-recover_k(targdata,"hybrid")
-recover_k(targdata,"agentRecovery_konly")
+#recover_k(targdata,"baseline")
+#recover_k(targdata,"hybrid")
+#recover_k(targdata,"agentRecovery_konly")
+recover_k(targdata,"hybrid_sanscalc")

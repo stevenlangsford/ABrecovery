@@ -308,10 +308,10 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     )
 
 
-simexp.df <- rbind(read.csv("rndstim.csv"),read.csv("swingaround_lomedhi_stim.csv"))
+simexp.df <- context_demo_stim #rbind(read.csv("rndstim.csv"),read.csv("swingaround_lomedhi_stim.csv"))
 simexp.df$trialid <- 1:nrow(simexp.df)
-
-sim.k <- matrix(c(.1,.9,.5,.5,.9,.1), nrow=3,ncol=2,byrow=TRUE)
+sim.k <- even.sim.k
+#sim.k <- matrix(c(.1,.9,.5,.5,.9,.1), nrow=3,ncol=2,byrow=TRUE)
 
  ##    matrix(c( #if you want the k matrix that generated the fun_for_ks_stim.csv, it's this:
  ## 0.07614139, 0.9238586,
@@ -324,8 +324,8 @@ do_a_survey(
     calcsd_levels=c(.15),
     ordsd_levels=c(.15),
     tolerance_levels=c(.1),
-    model_names=c("getchoices.stan"),
-    targfolder="allthestim",
+    model_names=c("hybrid_sanscalc_getchoices.stan"),
+    targfolder="hybridsanscalc_contextcheck",
     hm_options=3,
     hm_ppnts=nrow(sim.k)
     )

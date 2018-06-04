@@ -36,7 +36,9 @@ compare.df <- rbind(
 #    check_recovery("agentRecovery_konly.RData")%>%mutate(model="howes16"),
     check_recovery("baseline.RData")%>%mutate(model="baseline"),
     check_recovery("hybrid.RData")%>%mutate(model="hybrid"),
-    check_recovery("agentRecovery_sans_extremify.RData")%>%mutate(model="sansextreme")
+    ##check_recovery("agentRecovery_sans_extremify.RData")%>%mutate(model="sansextreme") #nope doesn't make much difference.
+    ##check_recovery("agentRecovery_halford.RData")%>%mutate(model="halford")   #k ests seem to drop a bit, but still flat, sampler screams in agony, why?
+    
 )
 
 ggplot(compare.df,aes(x=sim.1,y=recovered.1,color=model))+

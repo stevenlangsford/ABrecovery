@@ -35,7 +35,8 @@ return (recoverycheck.df)
 compare.df <- rbind(
 #    check_recovery("agentRecovery_konly.RData")%>%mutate(model="howes16"),
     check_recovery("baseline.RData")%>%mutate(model="baseline"),
-    check_recovery("hybrid.RData")%>%mutate(model="hybrid")
+    check_recovery("hybrid.RData")%>%mutate(model="hybrid"),
+    check_recovery("hybrid_sanscalc.RData")%>%mutate(model="sanscalc")    
 )
 
 ggplot(compare.df,aes(x=sim.1,y=recovered.1,color=model))+

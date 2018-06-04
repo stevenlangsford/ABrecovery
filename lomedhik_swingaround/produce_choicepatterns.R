@@ -7,7 +7,7 @@ rm(list=ls())
 #howes16samples <- as.data.frame(extract(recovery.fit, permuted = TRUE))
 load("baseline.RData")
 baselinesamples <- as.data.frame(extract(recovery.fit, permuted = TRUE))
-load("hybrid.RData")
+load("hybrid_sanscalc.RData") #was just 'hybrid'
 hybridsamples <- as.data.frame(extract(recovery.fit, permuted = TRUE))
 
 load("calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData")#targdata, contains simexp.df
@@ -33,18 +33,18 @@ source("sim_dosurvey.R") #loads do_a_survey function, expects to find simexp.df 
 
 simexp.df <- simexp.df%>%filter(ppntid==1)%>%select(-ppntid,-choice) #pre do-a-survey format. Man, why does this function look in the global env at all? ugh.
 
-##do the thing with the recovered mean sim k
-sim.k <- baseline.recovered
-do_a_survey(
-    simexp.df, sim.k,
-    calcsd_levels=c(.15),
-    ordsd_levels=c(.15),
-    tolerance_levels=c(.1),
-    model_names=c("baseline_choicegen.stan"),
-    targfolder="baseline_predict_from_meank",
-    hm_options=3,
-    hm_ppnts=nrow(sim.k)
-)
+##do the thing with the recovered mean sim k. Commented out just 'cause it's already done.
+## sim.k <- baseline.recovered
+## do_a_survey(
+##     simexp.df, sim.k,
+##     calcsd_levels=c(.15),
+##     ordsd_levels=c(.15),
+##     tolerance_levels=c(.1),
+##     model_names=c("baseline_choicegen.stan"),
+##     targfolder="baseline_predict_from_meank",
+##     hm_options=3,
+##     hm_ppnts=nrow(sim.k)
+## )
 
 ## sim.k <- howes16.recovered
 ## do_a_survey(
@@ -58,17 +58,32 @@ do_a_survey(
 ##     hm_ppnts=nrow(sim.k)
 ## )
 
+## sim.k <- hybrid.recovered
+## do_a_survey(
+##     simexp.df, sim.k,
+##     calcsd_levels=c(.15),
+##     ordsd_levels=c(.15),
+##     tolerance_levels=c(.1),
+##     model_names=c("hybrid_getchoices.stan"),
+##     targfolder="hybrid_predict_from_meank",
+##     hm_options=3,
+##     hm_ppnts=nrow(sim.k)
+## )
+
+
 sim.k <- hybrid.recovered
+print(sim.k);#giggles
 do_a_survey(
     simexp.df, sim.k,
     calcsd_levels=c(.15),
     ordsd_levels=c(.15),
     tolerance_levels=c(.1),
-    model_names=c("hybrid_getchoices.stan"),
-    targfolder="hybrid_predict_from_meank",
+    model_names=c("hybrid_sanscalc_getchoices.stan"),
+    targfolder="hybrid_sanscalc_predict_from_meank",
     hm_options=3,
     hm_ppnts=nrow(sim.k)
 )
+
 
 
 ##do the thing with the original sim.k

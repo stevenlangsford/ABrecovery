@@ -70,6 +70,8 @@ targdata="calc0.15ord0.15tolerance0.1modelgetchoices.stanfit.RData"
 ##recover_k(targdata,"agentRecovery_konly")
 ##recover_k(targdata,"agentRecovery_sans_extremify") #Nope, it's not about the extremification.
 ##recover_k(targdata,"agentRecovery_halford") # makes life really hard for the sampler... why? It's a constant factor. (probably) drops k but (definitely) v. flat.
-recover_k(targdata,"agentRecovery_sansord")
+#recover_k(targdata,"agentRecovery_sansord")
 
 #todo: hybrid_sansord, hybrid_sanscalc?  hybrid_halford
+#recover_k(targdata,"hybrid_sansord")
+recover_k(targdata,"hybrid_sanscalc")
