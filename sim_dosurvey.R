@@ -9,7 +9,7 @@ set.seed(4)
 
                                         #Options for sim.k:
 hm_attributes=2
-hm_ppnts=2
+hm_ppnts=1
 even.sim.k <- matrix(1/hm_attributes,ncol=hm_attributes,nrow=hm_ppnts,byrow=TRUE)#,# demo1: even weight on all attributes: all ppnts are identical (byrow necessary if you're filling with anything other than uniform values).
 random.sim.k <- rdirichlet(hm_ppnts,rep(1,hm_attributes)) #demo2, random weights, all ppnts are different. Doesn't make much sense with the context effect demo stim, which are set up fo .5,.5 weights.
 
@@ -308,7 +308,7 @@ save.image(file=paste0(targfolder,"/calc",calcsd_level,"ord",ordsd_level,"tolera
 ##     )
 
 
-simexp.df <- context_demo_stim #rbind(read.csv("rndstim.csv"),read.csv("swingaround_lomedhi_stim.csv"))
+simexp.df <- shifted_compromise_stim#context_demo_withflip #rbind(read.csv("rndstim.csv"),read.csv("swingaround_lomedhi_stim.csv"))
 simexp.df$trialid <- 1:nrow(simexp.df)
 sim.k <- even.sim.k
 #sim.k <- matrix(c(.1,.9,.5,.5,.9,.1), nrow=3,ncol=2,byrow=TRUE)
@@ -320,12 +320,13 @@ sim.k <- even.sim.k
  ## 0.76308393, 0.2369161,
  ## 0.37574002, 0.6242600), nrow=5,ncol=2,byrow=TRUE)
 
+modelnames = c("getchoices.stan","getchoices_doubleprior.stan")
 do_a_survey(
-    calcsd_levels=c(.15),
-    ordsd_levels=c(.15),
-    tolerance_levels=c(.1),
-    model_names=c("hybrid_sanscalc_getchoices.stan"),
-    targfolder="hybridsanscalc_contextcheck",
+    calcsd_levels=rep(.15,length(modelnames)),
+    ordsd_levels=rep(.15,length(modelnames)),
+    tolerance_levels=rep(.1,length(modelnames)),
+    model_names=modelnames,
+    targfolder="compromise_survey",
     hm_options=3,
     hm_ppnts=nrow(sim.k)
     )

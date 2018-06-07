@@ -50,7 +50,7 @@ for(anoption in 1:3){
 
     ordprobs <- mysamples%>%select(contains("ordprob_tracker"))
 
-    for(trialnumber in unique(simexp.df$trialid)){
+    for(trialnumber in simexp.df$trialid){
 
         statusprobs.df <- data.frame();
 

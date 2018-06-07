@@ -54,8 +54,8 @@ model{
   for(atrial in 1:hm_trials){
     for(anoption in 1:hm_options){
       for(anattribute in 1:hm_attributes){
-	if(anattribute % 2 == 0) est_trial_option_attribute[atrial,anoption,anattribute]~normal(1,2); //Symmetry-breaker allows compromise effect?
-	else est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,1); //?
+	if(anattribute % 2 == 0) est_trial_option_attribute[atrial,anoption,anattribute]~normal(1,1); //Symmetry-breaker allows compromise effect?
+	else est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,2); //?
       }
     }
   }
