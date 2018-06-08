@@ -29,17 +29,20 @@ var stimobj = function(optionlist, stimid){
 	var size=200;//stim max size. height, width are given in 0-1 then scaled by this.
 	var canvassize = 201; //used for both width & height
 	
-	function drawTriangle(canvas,points){//points should be [[x,y],[x,y],[x,y]]
+	function drawTriangle(canvas,mywidth,myheight,apexdisplacement){//apexdisplacement is as proportion of mywidth (preserves similarity)
 	    //	var canvas = document.getElementById('mycanvas');
 	    if (canvas.getContext) {
 		var ctx = canvas.getContext('2d');
 		//this aligns the centers, so you can judge sizes by checking y-of-base. Bad.
 		//TODO Either keep centering and change to triangle format, or keep line and add jitter to baseline.
+		var minx =canvas.width/2.0-mywidth/2.0;
+		var miny =canvas.height/2.0+myheight/2.0;
+		var midx = minx+apexdisplacement*mywidth;
 
 		ctx.beginPath();
-		ctx.moveTo(points[0][0],points[0][1]);
-		ctx.lineTo(points[1][0],points[1][1]);
-		ctx.lineTo(points[2][0],points[2][1]);
+		ctx.moveTo(minx,miny);
+		ctx.lineTo(midx, miny-myheight);
+		ctx.lineTo(minx+mywidth, miny);
 		ctx.fill();
 	    }
 	}//end centerTriangle
