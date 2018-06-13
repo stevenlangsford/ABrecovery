@@ -1,0 +1,58 @@
+data{
+  int hm_trials;
+
+  int hm_options;
+  int hm_attributes;
+  int hm_calcobs; 
+  int hm_ordobs;
+
+  int ord_trialid[hm_ordobs];
+  int ord_option1[hm_ordobs];
+  int ord_option2[hm_ordobs];
+  int ord_attribute[hm_ordobs];
+  real ord_value[hm_ordobs];
+  real ord_noisesd[hm_ordobs];
+  real ord_tolerance[hm_ordobs];
+
+  int calc_trialid[hm_calcobs];
+  int calc_optionid[hm_calcobs];
+  real calc_noisesd[hm_calcobs];
+  real calc_value[hm_calcobs];
+}
+
+parameters{
+  matrix[hm_options,hm_attributes] est_trial_option_attribute[hm_trials];
+}
+
+model{
+    vector[hm_options] calcobs[hm_trials];
+    
+  //populate attributes from priors:
+  for(atrial in 1:hm_trials){
+    for(anoption in 1:hm_options){
+      for(anattribute in 1:hm_attributes){
+	est_trial_option_attribute[atrial,anoption,anattribute]~normal(0,1); //attribute priors
+      }
+      calcobs[atrial,anoption] = est_trial_option_attribute[atrial,anoption,1]*est_trial_option_attribute[atrial,anoption,2]; //product attribute combination rule
+    }
+  }
+  
+  for(anobs in 1:hm_calcobs){
+    calcobs[calc_trialid[anobs],calc_optionid[anobs]]~normal(est_trial_option_attribute[calc_trialid[anobs],calc_optionid[anobs],1]*est_trial_option_attribute[calc_trialid[anobs],calc_optionid[anobs],2],calc_noisesd[anobs]);//est-calcobs consistency, uses product combination rule
+    calcobs[calc_trialid[anobs],calc_optionid[anobs]]~normal(calc_value[anobs],calc_noisesd[anobs]);//truth-calcobs consistency
+  }
+
+  //TODO ord obs
+  
+}//end model
+
+generated quantities{
+  int generated_choice[hm_trials];//required: return value.
+  vector[hm_options] estval_tracker[hm_trials];//required to generate choices
+  for(atrial in 1:hm_trials){
+    for(anoption in 1:hm_options){
+      estval_tracker[atrial,anoption]= (est_trial_option_attribute[atrial,anoption,1]*est_trial_option_attribute[atrial,anoption,2]*10)^5;//note extremification
+    }
+    generated_choice[atrial]=categorical_logit_rng(estval_tracker[atrial]);
+  }
+}
