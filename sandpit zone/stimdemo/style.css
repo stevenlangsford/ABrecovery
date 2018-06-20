@@ -11,3 +11,13 @@ button{
 .buttontd { 
     padding: 20px;
 }
+
+.stimholder{
+    float:left;
+    display:inline;
+}
+
+img{
+    display:inline;
+    visibility:hidden;
+}

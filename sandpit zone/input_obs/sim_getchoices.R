@@ -78,6 +78,11 @@ for(i in 1:nrow(rawstim.df)){
 
 ordobs.df$ord_status <- with(ordobs.df,ifelse(abs(value)<tolerance,2,ifelse(value<0,1,3)))
 
+##switch off comparisons with decoy...but not with comp.
+
+##ordobs.df <- ordobs.df%>%filter(trialid==1,option1!=3) #turn the decoy off
+ordobs.df <- filter(ordobs.df,option1!=2&option2!=2&trialid==1)
+
 datalist = list(
     hm_trials = length(unique(rawstim.df$trialid)),
     hm_options = 3,
@@ -107,28 +112,9 @@ fit <- stan(file="obsinput.stan",
             },
             chains=4)
 
-save.image("demofit.RData")
+save.image("demofit_compordoff.RData")
 
 mysamples <- as.data.frame(extract(fit, permuted = TRUE))
 #launch_shinystan(fit)
 
 View("done")
-
-## A="A"
-## B="B"
-## C="C"
-## for(targtrial in 1:10){
-
-##     ggsave(file=paste0("imgcan/targ",targtrial,"_opts_",paste0(options,collapse="_"),".png"),
-## ggplot(mysamples)+
-##     geom_point(aes_string(x=paste0("options.",targtrial,".1.1"),y=paste0("options.",targtrial,".1.2"),color="A"),alpha=.3)+
-##     geom_point(aes_string(x=paste0("options.",targtrial,".2.1"),y=paste0("options.",targtrial,".2.2"),color="B"),alpha=.3)+
-##     geom_point(aes_string(x=paste0("options.",targtrial,".3.1"),y=paste0("options.",targtrial,".3.2"),color="C"),alpha=.3)+
-##     #geom_point(aes_string(x=mean(options.1.1.1),y=mean(options.1.1.2),color="A"),shape=10,size=5)+
-##     #geom_point(aes_string(x=mean(options.1.2.1),y=mean(options.1.2.2),color="B"),shape=10,size=5)+
-##     #geom_point(aes_string(x=mean(options.1.3.1),y=mean(options.1.3.2),color="Decoy"),shape=10,size=5)+
-##     theme_bw()+geom_point(data=as.data.frame(options),aes(x=V1,y=V2,color="truth"),size=5)+
-##     ggtitle(paste(as.character(table(mysamples[,paste0("choice.",targtrial)])),c("A","B","C"),collapse=" "))
-## );#end print
-##     }#end 10 demo runs
-## }#end for each option in optionlist

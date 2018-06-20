@@ -1,0 +1,5 @@
+source("read_stim_from_jsoutput.R")
+source("sim_getchoices.R")
+source("visresults.R")
+
+View("done");

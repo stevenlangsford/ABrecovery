@@ -52,7 +52,7 @@ model{
     //prob of status '>': 1-phi(tolerance)
     ordprob_status[anobs,3]=0.001+1-normal_cdf(ord_tolerance[anobs],est_trial_option_attribute[ord_trialid[anobs],ord_option1[anobs],ord_attribute[anobs]]-est_trial_option_attribute[ord_trialid[anobs],ord_option2[anobs],ord_attribute[anobs]],ord_noisesd[anobs]);
 
-    ordprob_status[anobs] = ordprob_status[anobs]/sum(ordprob_status[anobs]); //normalize necessary after adding fudge factor...    
+    ordprob_status[anobs] = ordprob_status[anobs]/sum(ordprob_status[anobs]); //normalize necessary after adding fudge factor...
     target += categorical_lpmf(ord_value[anobs] | ordprob_status[anobs]);//Before the pipe:  true relation between options 1 & 2 on target attribute {1:'<',2:'=',3:'>'}, passed in as data. After pipe: the probability of each outcome given the current attribute estimates. Results in a reward being added to target when ests are consistent with true ordinal relations.
   }//end for each ordobs
   

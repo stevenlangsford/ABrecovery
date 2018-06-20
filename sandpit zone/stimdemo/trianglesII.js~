@@ -1,0 +1,219 @@
+//housekeeping
+const canvassize = 125;
+
+// function shuffle(a) { //credit SO
+//     var j, x, i;
+//     for (i = a.length - 1; i > 0; i--) {
+//         j = Math.floor(Math.random() * (i + 1));
+//         x = a[i];
+//         a[i] = a[j];
+//         a[j] = x;
+//     }
+//     return a;
+// }
+
+function shuffle(a){ //switch randomization off for testing
+    return a;
+}
+
+function linelength(x1,y1,x2,y2){
+    var a = x2-x1;
+    var b = y2-y1;
+    return Math.sqrt(a*a+b*b)
+}
+
+function recordResponse(responseType,stimsummary){
+    //TODO, save response and advance to next trial.
+    console.log(responseType);//placeholder
+    console.log(stimsummary);
+}
+
+//stim template. Can rotate, stretch height or width, & dilate
+function triangle(base,height,templatetype, orientation){
+    this.base = base;
+    this.height = height;
+    this.templatetype = templatetype;    
+    this.orientation = orientation; //triangle is drawn 'vertical', so apply rotations until this is true! TODO
+
+    //convert to cords so you can draw the thing.
+    this.x1=0;
+    //	this.x2 varies by template type:
+    this.x3=base;
+    this.y1=0;
+    this.y2=height;
+    this.y3=0;
+    
+    if(templatetype=="rightangle"){
+	this.x2=0;
+    }
+    else if(templatetype=="equilateral"){
+	this.x2=base/2;
+    }
+    else if(templatetype=="skew"){
+	this.x2=base/4;
+    }
+    else{
+	console.log("bad template:"+templatetype+" for "+base+":"+height);
+    }
+
+    for(var i=0;i<orientation;i++){
+	var newx1=-this.y1; //rot90. Init vals are for N orientation, spin to match requested oriantation.
+	var newx2=-this.y2;
+	var newx3=-this.y3;
+	var newy1=this.x1;
+	var newy2=this.x2;
+	var newy3=this.x3;
+
+	this.x1=newx1;
+	this.x2=newx2;
+	this.x3=newx3;
+	this.y1=newy1;
+	this.y2=newy2;
+	this.y3=newy3;
+    }
+    
+
+    this.cloneme = function(){//js is literally satan. Never do anything 'in place' just in case.
+	return new triangle(this.base, this.height, this.templatetype,this.orientation);
+    }
+
+    this.area = function(){
+	//heron's formula, because 'base' and 'height' are visually obvious (i hope?) but annoying in xycords land.
+	var a = linelength(this.x1,this.y1,this.x2,this.y2);//linelength defined up to with shuffle, used in a few places
+	var b = linelength(this.x2,this.y2,this.x3,this.y3);
+	var c = linelength(this.x3,this.y3,this.x1,this.y1);
+	var s = (a+b+c)/2;
+	return Math.sqrt(s*(s-a)*(s-b)*(s-c));
+    }
+
+    //longaxis: just because of the way the templates are set up, this is the altitude from x2y2 to x1y1:x3y3,
+    //'orientation' tells you if it's width or height.
+    
+    // this.longaxis = function(){ //ie height, but at whatever orientation
+    // 	return 2*this.area()/this.base();
+    // }
+    // this.base = function(){
+    // 	return linelength(this.x1,this.y1,this.x3,this.y3);// picking this as the base just from the way the templates are set up. It's arbitrary (but natural?)
+    // }
+    
+    this.rotate90 = function(){//swaps width & height while preserving similarity properties
+	var newx1=-this.y1;
+	var newx2=-this.y2;
+	var newx3=-this.y3;
+	var newy1=this.x1;
+	var newy2=this.x2;
+	var newy3=this.x3;
+
+	return new triangle(this.base,this.height, this.templatetype,(this.orientation+1)%4);
+    }
+    
+    this.scaleSize=function(scalefactor){
+	var next_x1 = this.x1*scalefactor;
+	var next_x2 = this.x2*scalefactor;
+	var next_x3 = 	this.x3*scalefactor;
+	var next_y1 = 	this.y1*scalefactor;
+	var next_y2 = 	this.y2*scalefactor;
+	var next_y3 = 	this.y3*scalefactor;
+
+	return new triangle(next_x1,next_y1,next_x2,next_y2,next_x3,next_y3,this.orientation);
+    }
+
+    // this.equal_area_slide = function (whichdimension,squashiness){
+    // 	var smaller = this.scaleSize(squashiness);
+    // 	if(whichdimension=="x"){
+    // 	    while(smaller.area()<this.area()){smaller.x2+=.001; smaller.x3+=.001}
+    // 	}else{
+    // 	    while(smaller.area()<this.area()){smaller.y2-=.001;}
+    // 	}
+    // 	return smaller;//which has now been hackily stretched to equal. Note orientation left alone (but maybe you should check this...)
+    // }
+    
+    this.drawme = function(canvas){	
+	var leftmost = Math.min(this.x1,this.x2,this.x3);
+	var highest = Math.min(this.y1,this.y2,this.y3);
+	var rightmost = Math.max(this.x1,this.x2,this.x3);
+	var lowest = Math.max(this.y1,this.y2,this.y3);
+	var width = rightmost-leftmost;
+	var height = lowest-highest;
+	
+	var shiftx = -leftmost+canvas.width/2-width/2 + (-5+20*Math.random());//center the shape & add jitter 
+	var shifty = canvas.height-lowest-canvas.height/2+height/2 + (-5+10*Math.random());
+
+	if (canvas.getContext) {
+	    var ctx = canvas.getContext('2d');
+	    
+	    ctx.beginPath();
+	    ctx.moveTo(this.x1+shiftx,this.y1+shifty);
+	    ctx.lineTo(this.x2+shiftx,this.y2+shifty);
+	    ctx.lineTo(this.x3+shiftx,this.y3+shifty);
+	    ctx.fill();
+	}
+    }
+}//end triangle
+
+
+function trialobj(triangles,roles,stimid){ //responsible for drawing to screen, including randomization of locations and starting orientation. Also TODO here recording responses.
+    this.triangles = triangles;
+    this.roles = roles;
+    this.presentation_position = shuffle([0,1,2]);
+    this.stimid = stimid;
+    this. hm_rotations = 0;//shuffle([0,1,2,3])[0]; //canonical orientation is tall (N), randomize so NSEW versions all presented.
+
+    for(var i=0;i<this.hm_rotations;i++){
+    	for(var j=0;j<this.triangles.length;j++)this.triangles[j]=this.triangles[j].cloneme().rotate90();//whee
+    }
+
+    this.drawme = function(targdiv){
+	document.getElementById(targdiv).innerHTML="<table style='border:solid 3px black'>"+//haha, tables. Oh dear.
+	"<tr><td colspan='2' align='center' class='buttontd'><button onclick=recordResponse('"+this.roles[this.presentation_position[0]]+"','"+this.summarystring()+"')>This one</button></td></tr>"+
+	    "<tr><td colspan='2' align='center'>"+
+	    "<canvas id='canvas0"+stimid+"' width='"+canvassize+"' height='"+canvassize+"'></canvas>"+
+	    "</td></tr>"+
+	    "<tr>"+
+	    "<td align='center'>"+"<canvas id='canvas1"+stimid+"' width='"+canvassize+"' height='"+canvassize+"'></canvas>"+"</td>"+
+	    "<td align='center'>"+"<canvas id='canvas2"+stimid+"' width='"+canvassize+"' height='"+canvassize+"'></canvas>"+"</td>"+
+	    "</tr>"+
+	    "<tr><td align='left' class='buttontd'><button onclick=recordResponse('"+this.roles[this.presentation_position[1]]+"','"+this.summarystring()+"')>This one</button></td> <td align='right' class='buttontd'><button onclick=recordResponse('"+this.roles[this.presentation_position[2]]+"','"+this.summarystring()+"')>This one</button></td></tr>"+
+	    "</table>";
+	for(var i=0;i<this.presentation_position.length;i++){
+	    triangles[this.presentation_position[i]].drawme(document.getElementById('canvas'+i+this.stimid));
+	}
+    }
+    //possibly add this.summarystring(), pass that to recordResponse
+    this.summarystring=function(){
+	//add some things you might want to inspect that are derived from changeable status vars.
+	this.areas = [this.triangles[0].area(), this.triangles[1].area(),this.triangles[2].area()];//you might want to inspect these?
+//	this.axislengths = [this.triangles[0].longaxis(),this.triangles[1].longaxis(),this.triangles[2].longaxis()]
+//	this.baselengths = [this.triangles[0].base(),this.triangles[1].base(),this.triangles[2].base()];
+	return(JSON.stringify(this)); //could mess with this if it's convenient? This seems like a nice conservative way to get everything though.
+    }
+    
+}
+
+function trialgetter(x1,y1,x2,y2,x3,y3,shapetypes,roles,orientations,stimid){
+    //triangles,roles,stimid
+    var shape_mapping = shuffle(["rightangle","equilateral","skew"])
+
+    var    scalefactor = 100;
+    x1=x1*scalefactor;
+    x2=x2*scalefactor;
+    x3=x3*scalefactor;
+    y1=y1*scalefactor;
+    y2=y2*scalefactor;
+    y3=y3*scalefactor;
+    
+    var mytriangles = [new triangle(x1,y1,shape_mapping[shapetypes[0]],orientations[0]),
+		       new triangle(x2,y2,shape_mapping[shapetypes[1]],orientations[1]),
+		       new triangle(x3,y3,shape_mapping[shapetypes[2]],orientations[2])];
+    return new trialobj(mytriangles,shapetypes,roles,stimid)
+		       
+}
+
+//CREATE STIM HERE
+var stimlist =[trialgetter(1,.5,1,.5,1,.5,['0','1','2'],['targ','comp','decoy'],['0','0','0'],'demo_trial_1')]
+
+     for(var i =0;i<stimlist.length;i++){
+ 	document.write("<div id='stimholder"+i+"'></div><p>"+stimlist[i].stimid+"</p>");
+ 	stimlist[i].drawme("stimholder"+i); //view stim	
+     }
+
