@@ -1,0 +1,12 @@
+library(tidyverse)
+##Just strings the R scripts in order.
+##config setup appears in get_customized_contextstim, all others follow this lead.
+source("get_customized_contextstim.R")
+print("got stim"); rm(list=ls()); gc();
+source("simulate_choices.R")
+print("got choices"); rm(list=ls()); gc();
+source("run_recovery.R")
+print("got recovery"); rm(list=ls()); gc();
+source("plot_kests.R")
+print("got plots"); rm(list=ls()); gc();
+View("done") #creates a popup.

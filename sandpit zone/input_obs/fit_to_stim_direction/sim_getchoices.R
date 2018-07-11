@@ -104,7 +104,7 @@ fit <- stan(file="obsinput.stan",
 save.image("demofit.RData")
 
 mysamples <- as.data.frame(extract(fit, permuted = TRUE))
-source("visresults.R")
+#source("visresults.R")
 #launch_shinystan(fit)
 
 View("done")

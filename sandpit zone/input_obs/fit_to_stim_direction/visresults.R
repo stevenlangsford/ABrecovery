@@ -4,7 +4,7 @@ library(shinystan)
 library(patchwork)
 
 rm(list=ls())
-targdata= "demofit.RData";
+targdata= "demofit0.02noise,0.05tolerance.RData";
 dataname = strsplit(targdata,".RData")[1]
 load(targdata)
 
@@ -22,11 +22,11 @@ trialplot <- function(trialid){ #assumes mysamples and rawstim.df visible.
         geom_point(data=rawstim.df[trialid,], aes(x=option1attribute1,y=option1attribute2,fill="1",shape="1"),color="black",pch=21,size=5)+
         geom_point(data=rawstim.df[trialid,], aes(x=option2attribute1,y=option2attribute2,fill="2",shape="2"),color="black",pch=21,size=5)+
         geom_point(data=rawstim.df[trialid,], aes(x=option3attribute1,y=option3attribute2,fill="3",shape="3"),color="black",pch=21,size=5)+
-        theme_bw()+
+        theme_bw()+xlim(c(0,3))+ylim(c(0,3))+
         ggtitle(rawstim.df[trialid,"stimid"])
 ##        ggtitle(paste("Trial",trialid,paste0("value",1:3,"=",signif(rawstim.df[trialid,c("value1","value2","value3")],3)," ",collapse="")))
 
-    choice.plot <- ggplot(mysamples%>%select(starts_with(paste0("generated_choice.",trialid))),aes_string(x=paste0("generated_choice.",trialid)))+
+    choice.plot <- ggplot(mysamples%>%select(matches(paste0("generated_choice.",trialid,"$"))),aes_string(x=paste0("generated_choice.",trialid)))+
         geom_bar(stat="count",aes_string(fill=paste0("generated_choice.",trialid)))+
         theme_bw()
 
@@ -34,5 +34,5 @@ trialplot <- function(trialid){ #assumes mysamples and rawstim.df visible.
 }#end trialplot
 
 for(i in 1:nrow(rawstim.df)){
-     ggsave(trialplot(i),file=paste0("plots/",dataname,"_trial",i,".png"))
+     ggsave(trialplot(i),file=paste0("plots/",dataname,"_trial",as.character(rawstim.df[i,"stimid"]),".png"))
 }    

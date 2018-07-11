@@ -7,8 +7,9 @@ rm(list=ls())
 ##two factors in comparison difficulty with two levels each: triangle-type same/diff, orientation same/diff.
 ##So that's three levels of difficulty: none on, one on, both on.
 ##Let's assume they're just additive and contibute one 'basenoise' each for simplicity, although that's probably not true?
-basenoise = .03; #critical steps are 5%, 10%, and 15%, because these are the decoy-stim gaps. Should loop over a few basenoise values...
 
+for(basenoise in seq(from=.01, to = .1,length=10)){
+for(tolerance in c(0.01,0.05,0.1)){
 ##set.seed(4);
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
@@ -74,7 +75,7 @@ for(i in 1:nrow(rawstim.df)){
                                             value=rawstim.df[atrial,paste0("option",option1,"attribute",anattribute)]-
                                                 rawstim.df[atrial,paste0("option",option2,"attribute",anattribute)],
                                             noisesd=mynoise,
-                                            tolerance=mynoise #step-like transition from attraction to sim when tolerance>stim-gap. Originally decoupled from noise...
+                                            tolerance=tolerance
                                         )
                               )
           }#for each attribute
@@ -111,12 +112,17 @@ fit <- stan(file="obsinput.stan",
                 dim(zeros)=c(nrow(rawstim.df),3,2)
                 list(est_trial_option_attribute=zeros)
             },
-            chains=4)
+            chains=4,
+            control=list(max_treedepth=15))
 
-save.image("demofit.RData")
+    save.image(paste0("demofit",basenoise,"noise,",tolerance,"tolerance.RData"))
+    rm(fit)
+    gc() #fitting multiple stan models in a loop tends to crash R, probably out of memory.
+}#end each tolerance
+}#end each noise
 
-mysamples <- as.data.frame(extract(fit, permuted = TRUE))
-source("visresults.R")
-#launch_shinystan(fit)
+## mysamples <- as.data.frame(extract(fit, permuted = TRUE))
+## source("visresults.R")
+## #launch_shinystan(fit)
 
 View("done")

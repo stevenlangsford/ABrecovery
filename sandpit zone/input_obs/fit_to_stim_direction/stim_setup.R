@@ -38,7 +38,8 @@ get_equivalue <- function(option,delta_x){
 
 get_target <- function(){
     return(
-        list(x=abs(rnorm(1,1,.1)),y=abs(rnorm(1,.5,.1)))
+        list(x=1,y=.5)
+        ##list(x=abs(rnorm(1,1,.1)),y=abs(rnorm(1,.5,.1)))
     )
 }
 

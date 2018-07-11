@@ -1,0 +1,43 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+library(patchwork)
+
+rm(list=ls())
+
+survey.df <- data.frame()
+
+for(targdata in list.files(pattern="demofit0*")){
+
+    dataname = strsplit(targdata,".RData")[1]
+    load(targdata)
+
+    for(trialid in 1:nrow(rawstim.df)){
+        mysamples <- as.data.frame(extract(fit, permuted = TRUE))
+
+        choices <- mysamples%>%select(matches(paste0("generated_choice.",trialid,"$")))
+        ones <- sum(choices==1)/nrow(choices)
+        twos <- sum(choices==2)/nrow(choices)
+        threes <- sum(choices==3)/nrow(choices)
+        survey.df <- rbind(survey.df, data.frame(trial=trialid, noise=basenoise, ones=ones,twos=twos,threes=threes,choicecolor= rgb(red=ones,green=twos, blue=threes), stimid=as.character(rawstim.df[trialid,"stimid"])))
+    }
+}
+
+ggsave(
+    ggplot(survey.df,aes(x=noise,y=stimid))+geom_point(size=5,aes(color=ones/(ones+twos)))+
+    theme_bw()+labs(color="'target' choice proportion"),
+    file="noiserangesurvey.png",
+    width=15,height=15
+    )
+
+## ggplot(survey.df,aes(x=noise,y=stimid))+geom_point(size=5,color=survey.df$choicecolor)+
+##     theme_bw()
+
+## ggplot(survey.df,aes(y=stimid))+
+##     geom_point(size=5,aes(x=noise,color=threes,shape="decoy"))+
+##     geom_point(size=5,aes(x=noise+.0007,color=twos,shape="comp"))+
+##         geom_point(size=5,aes(x=noise+.0014,color=ones,shape="targ"))+
+##     theme_bw()
+
+ggplot(survey.df,aes(x=noise,y=stimid))+geom_point(size=5,color=survey.df$choicecolor)+
+    theme_bw()

@@ -1,0 +1,58 @@
+library(tidyverse)
+library(rstan)
+library(shinystan)
+rm(list=ls())
+
+saveplots=TRUE;
+
+load("simk.RData")
+##for all the recovery fits:
+k.summary.df <- data.frame()
+
+for(arecovery in list.files("recovery/",pattern=".*RData")){
+    load(paste0("recovery/",arecovery))
+    mysamples <- as.data.frame(extract(recovery.fit[[1]], permuted=TRUE))
+    mydata.df <- recovery.fit[[2]]
+
+    k.est.dist <- mysamples%>%select(starts_with("k"))%>%select(ends_with("1"))%>%gather(ppntid,k.est)
+    for(appnt in 1:nrow(sim.k))for(arow in 1:nrow(k.est.dist)){if(k.est.dist[arow,"ppntid"]==paste0("k.",appnt,".1")){k.est.dist[arow,"simk"]=sim.k[appnt,1]}}
+
+    k.est.dist$err <- with(k.est.dist,k.est-simk)
+    modeltype <- substr(arecovery,1,6)
+    hm.attractionstim <- sum(mydata.df$trialtype=="attraction")/nrow(sim.k)
+
+    myname = paste0(modeltype,"_",(hm.attractionstim),"attractionstim")
+
+    k.violins.plot <- ggplot(k.est.dist)+
+        geom_violin(aes(x=simk,y=k.est,group=simk))+
+        geom_point(data=k.est.dist%>%group_by(simk)%>%summarize(meank=mean(k.est)), aes(x=simk,y=meank,group=simk))+
+        geom_abline(intercept=0,slope=1)+
+        ylim(c(0,1))+
+        theme_bw()
+
+    k.summary.df <- rbind(k.summary.df,
+                          k.est.dist%>%
+                          group_by(ppntid)%>%
+                          summarize(err=abs(mean(k.est)-mean(simk)),
+                                    ci.low=quantile(k.est,c(0.25,.975))[1],
+                                    ci.high=quantile(k.est,c(0.25,.975))[2])%>%
+                          ungroup()%>%
+                          mutate(hm.attractionstim=hm.attractionstim,modeltype=modeltype))
+
+    if(saveplots){
+        ggsave(k.violins.plot,
+               file=paste0("plots/",myname,"_kviolins.png"))
+    }
+
+
+}#end for each recovery fit
+
+
+if(saveplots){
+ggsave(
+    ggplot(k.summary.df,aes(x=hm.attractionstim,y=err,color=modeltype))+
+    geom_point()+
+    geom_smooth(method="lm",se=FALSE)+
+    theme_bw(),
+    file="plots/k_err_by_stimset.png")
+}

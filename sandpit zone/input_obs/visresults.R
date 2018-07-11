@@ -38,9 +38,3 @@ trialplot <- function(trialid){ #assumes mysamples and rawstim.df visible.
 for(i in 1:6){
      ggsave(trialplot(i),file=paste0("plots/",dataname,"_trial",i,".png"))
 }
-
-
-##NEXT: Ok, ordinal observation is in. You haven't tried to visualize with/without ordobs to see if it's doing anything sensible. Do that. (Just don't pass ordobs)
-##The current stimuli are not good tests. You want to replicate howes16 (again), possibly do the vary-noise survey, then shift to your proposed triangle stimuli without similarity structure, then triangle stimuli with a guess at how similarity might push around ordobs. Maybe a range of guesses, like is vary-noise very different from vary-tolerance? What do you sincerely reckon is plausible?
-##What aspect of this is going to make adherents of alternative accounts sit up and take notice? What's the MLBA story with comparisons-are-basic-input (for example)
-##Also, don't forget you've got placeholder TODO's hanging over your head re priors (that lower bound limit) and inits.
